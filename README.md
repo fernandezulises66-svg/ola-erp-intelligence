@@ -214,7 +214,40 @@ Cubren la API completa, la cola y el worker, el HITL (aprobación y rechazo), el
 
 ## Observabilidad
 
-*Se completa con la corrida real: capturas en [`screenshots/`](./screenshots).*
+Cada ejecución genera una traza en **Arize Phoenix**, el proyecto `ola-erp-intelligence`. La traza muestra el árbol de nodos del grafo, las llamadas al LLM con sus tokens y costo, las herramientas y las búsquedas del RAG. La **sesión** de Phoenix es la conversación: todas sus preguntas, la pausa humana y la reanudación aparecen juntas.
+
+### Resultado de las 5 pruebas (corrida real)
+
+Con Anthropic `claude-haiku-5-5` y Pinecone, las pruebas 1, 2, 4 y 5 corrieron en paralelo; la 3 corrió después, sobre la conversación de la 2. El detalle está en [`resultados_pruebas.json`](./resultados_pruebas.json).
+
+| # | Prueba | Recorrido del supervisor | Latencia | Resultado |
+|---|---|---|---|---|
+| 1 | Error `VTA-410-PRES` | investigador → sintetizador | 14,2 s | Código y solución citados de `08-codigos-de-error.json` y `03-api-ventas.md` (no hacía falta calcular) |
+| 2 | Vigencia, descuento, seña y rol | investigador → analista → **investigador** → sintetizador | 48,4 s | Vigente hasta el 12/11, $967.600, seña de $483.800, aprueba gerencia. El supervisor pidió una segunda búsqueda para confirmar sobre qué monto se calcula la seña |
+| 3 | "¿Y si fuera el 20 %?" (misma conversación) | analista → sintetizador | 20,1 s | $944.000, seña de $472.000, aprueba gerencia. **Usó la memoria**: no volvió a buscar en el manual |
+| 4 | Diferencia de caja de $7.300 | investigador → analista → sintetizador | 22,2 s | Requiere justificación; supera el umbral de $5.000 por $2.300 (`CAJA-422-JUST`) |
+| 5 | "Aplicá el descuento y registralo" | investigador → investigador → analista → sintetizador → **pausa** | 56,5 s | `WAITING_APPROVAL` → aprobado por gerencia → acción registrada en el ERP |
+| 6 | Tras `docker compose restart api` | sintetizador | 5,1 s | La conversación de las pruebas 2 y 3 seguía en Redis (2 turnos). Respondió desde la memoria con 5.561 tokens |
+
+**Métricas del dashboard:** la **latencia p95** de las 4 pruebas concurrentes fue de **51,9 s** (p50 34,6 s). El **costo** de toda la corrida fue de unos **$0,03**, menos de $0,01 por prueba. Phoenix lo calcula con el precio de `claude-haiku-5-5`.
+
+**Lectura del dashboard:**
+
+- **Dónde se va el tiempo:** en las llamadas al LLM de cada ronda del supervisor y en las búsquedas del investigador (~1,5 s cada una, cuatro por ronda). El analista tarda milisegundos en sus herramientas.
+- **Qué consume tokens:** una pregunta multi-paso usa unos 60.000 tokens, la mayoría en el ciclo ReAct del investigador, que acumula los fragmentos del manual. Un seguimiento con memoria baja a unos 20.000, y una pregunta que se responde solo con la memoria, a unos 5.500.
+
+### Capturas
+
+| Archivo | Qué muestra |
+|---|---|
+| [`01-trazas.png`](./screenshots/01-trazas.png) | Las 7 trazas de la corrida: 6 `job.start` y 1 `job.resume` |
+| [`02a`](./screenshots/02a-multipaso-supervisor.png) a [`02e`](./screenshots/02e-multipaso-sintetizador-lcel.png) | Traza completa de la prueba 2: supervisor, investigador con `buscar_manual` y `rag.busqueda_hibrida`, analista con sus herramientas, segunda ronda del investigador y sintetizador como cadena LCEL con `PydanticToolsParser` |
+| [`03a`](./screenshots/03a-rag-hibrido-salida.png) a [`03c`](./screenshots/03c-rag-hibrido-salida.png) | Salida validada de `buscar_manual`: cada fragmento con fuente, `chunk_id`, puntaje RRF y `metodos: ["bm25","vectorial"]` |
+| [`04a`](./screenshots/04a-memoria-turno1.png) a [`04c`](./screenshots/04c-memoria-turno3-tras-reinicio.png) | Una conversación con 3 turnos: la pregunta, el seguimiento y la pregunta después del reinicio |
+| [`05a`](./screenshots/05a-hitl-pausa.png), [`05b`](./screenshots/05b-hitl-aprobacion-y-accion.png) | Human-in-the-loop: pausa en `WAITING_APPROVAL` y reanudación con la decisión de gerencia (0 tokens, 17 ms) |
+| [`06a`](./screenshots/06a-latencia-p95.png) | Latencia p95 = 51,9 s de las pruebas concurrentes |
+| [`06b`](./screenshots/06b-latencia-1134.png) | Latencia del minuto siguiente: seguimiento y reanudación |
+| [`06c`](./screenshots/06c-costo.png) | Costo de la corrida por tipo de token |
 
 ## Configuración
 

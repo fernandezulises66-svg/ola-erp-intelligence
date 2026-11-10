@@ -74,6 +74,17 @@ def span_job(job_id: str, conversation_id: str, tipo: str, entrada: Any) -> Iter
             yield span
 
 
+def _documentos(span: Any, docs: list[Any]) -> None:
+    """Atributos `retrieval.documents.*` de OpenInference: Phoenix los muestra en el panel Documents."""
+    for i, d in enumerate(docs):
+        datos = d.model_dump() if hasattr(d, "model_dump") else dict(d)
+        base = f"retrieval.documents.{i}.document"
+        span.set_attribute(f"{base}.id", str(datos.get("chunk_id", i)))
+        span.set_attribute(f"{base}.content", str(datos.get("texto", ""))[:4000])
+        span.set_attribute(f"{base}.score", float(datos.get("score", 0.0)))
+        span.set_attribute(f"{base}.metadata", _json({k: v for k, v in datos.items() if k not in ("texto",)}))
+
+
 def observar(nombre: str, kind: str = "CHAIN") -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """Decorador para funciones async propias: crea un span con su entrada, salida y errores."""
     def decorador(fn: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
@@ -89,6 +100,8 @@ def observar(nombre: str, kind: str = "CHAIN") -> Callable[[Callable[P, Awaitabl
                     span.set_status(Status(StatusCode.ERROR, str(e)))
                     raise
                 span.set_attribute("output.value", _json(resultado))
+                if kind == "RETRIEVER" and isinstance(resultado, list):
+                    _documentos(span, resultado)
                 return resultado
         return envuelta
     return decorador
