@@ -1,0 +1,22 @@
+{
+  "doc_id": "codigos-error",
+  "title": "Catálogo de códigos de error del ERP",
+  "category": "soporte",
+  "tags": ["errores", "soporte", "troubleshooting"],
+  "aviso": "Documentación técnica ficticia, creada con fines educativos para el curso de AI Engineering.",
+  "entries": [
+    {"codigo": "AUTH-401-EXP", "modulo": "Autenticación", "descripcion": "La sesión venció porque pasaron más de 8 horas desde el login.", "solucion": "Volver a iniciar sesión."},
+    {"codigo": "AUTH-403-ROL", "modulo": "Autenticación", "descripcion": "El rol del usuario no tiene permiso para la acción.", "solucion": "Pedir a un administrador que revise el rol asignado."},
+    {"codigo": "AUTH-423-LOCK", "modulo": "Autenticación", "descripcion": "Cuenta bloqueada por 5 intentos fallidos en 15 minutos.", "solucion": "Esperar 30 minutos o pedir el desbloqueo a un administrador."},
+    {"codigo": "VTA-409-STOCK", "modulo": "Ventas", "descripcion": "No hay stock disponible para reservar un ítem de la venta.", "solucion": "Revisar el inventario o registrar el ítem como mueble a medida."},
+    {"codigo": "VTA-410-PRES", "modulo": "Ventas", "descripcion": "El presupuesto venció (más de 15 días corridos).", "solucion": "Actualizar precios y generar un presupuesto nuevo."},
+    {"codigo": "VTA-409-FACT", "modulo": "Ventas", "descripcion": "Se intentó anular una venta ya facturada.", "solucion": "Emitir una nota de crédito."},
+    {"codigo": "CAJA-422-JUST", "modulo": "Caja", "descripcion": "La diferencia del cierre supera los $5.000 y falta la justificación.", "solucion": "Completar el campo de justificación antes de cerrar."},
+    {"codigo": "CAJA-409-CERR", "modulo": "Caja", "descripcion": "Se intentó registrar un movimiento en un día ya cerrado.", "solucion": "Registrar un ajuste con la fecha actual."},
+    {"codigo": "TN-401-FIRMA", "modulo": "Tiendanube", "descripcion": "La firma del webhook no es válida.", "solucion": "Verificar que TN_WEBHOOK_SECRET coincida con el de la app de Tiendanube."},
+    {"codigo": "TN-422-SKU", "modulo": "Tiendanube", "descripcion": "Un producto del pedido tiene un SKU inexistente en el ERP.", "solucion": "Corregir el SKU y reprocesar el pedido."},
+    {"codigo": "ERR-AFIP-102", "modulo": "Facturación AFIP", "descripcion": "AFIP rechazó la factura porque el CUIT del receptor es inválido o no figura en el padrón.", "solucion": "Verificar el CUIT en la ficha del cliente; si es consumidor final, emitir factura B con DNI."},
+    {"codigo": "ERR-AFIP-10016", "modulo": "Facturación AFIP", "descripcion": "El número de comprobante no es correlativo con el último autorizado.", "solucion": "Sincronizar la numeración con el último comprobante autorizado y reintentar."},
+    {"codigo": "ERR-AFIP-CERT", "modulo": "Facturación AFIP", "descripcion": "El certificado digital está vencido o no corresponde al CUIT emisor.", "solucion": "Generar un nuevo certificado con el contador y actualizar AFIP_CERT_PATH."}
+  ]
+}

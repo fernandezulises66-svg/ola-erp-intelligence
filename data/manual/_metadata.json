@@ -1,0 +1,8 @@
+{
+  "04-integracion-afip.pdf": {
+    "doc_id": "integracion-afip",
+    "title": "Guía de integración con AFIP: facturación electrónica",
+    "category": "fiscal",
+    "tags": ["afip", "facturacion", "cae", "wsfe"]
+  }
+}

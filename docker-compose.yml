@@ -1,0 +1,42 @@
+# Un solo comando:  docker compose up --build
+#   API (docs)  → http://localhost:8000/docs
+#   Phoenix     → http://localhost:6006
+#   Redis 8     → localhost:6379
+services:
+  redis:
+    image: redis:8                       # trae RedisJSON y RediSearch (los necesita el AsyncRedisSaver)
+    command: ["redis-server", "--appendonly", "yes"]   # persistencia en disco: sobrevive a reinicios
+    ports: ["6379:6379"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports: ["6006:6006"]                 # UI + colector OTLP/HTTP (/v1/traces)
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+      PHOENIX_ENABLE_AUTH: "false"       # entorno local; en producción: true + API keys de sistema
+    volumes: [phoenix-data:/mnt/data]
+
+  api:
+    build: .
+    ports: ["8000:8000"]
+    env_file: .env                       # keys (nunca se suben al repo)
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+    depends_on:
+      redis: {condition: service_healthy}
+      phoenix: {condition: service_started}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  redis-data:
+  phoenix-data:
