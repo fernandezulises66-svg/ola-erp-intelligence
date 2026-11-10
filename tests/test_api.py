@@ -92,8 +92,10 @@ def test_errores_http_y_validacion_de_entrada():
         jid = preguntar(c, CONSULTA)["job_id"]
         esperar(c, jid, {"DONE"})
         assert c.post(f"/tasks/{jid}/approve", json={"aprobado": True}).status_code == 409
-        assert c.post("/tasks/x/approve", json={"aprobado": True}).status_code == 404
-        assert c.get("/tasks/no-existe").status_code == 404
+        assert c.post(f"/tasks/{'0' * 32}/approve", json={"aprobado": True}).status_code == 404
+        assert c.get(f"/tasks/{'0' * 32}").status_code == 404
+        assert c.get("/tasks/no-es-un-id").status_code == 422             # path param validado
+        assert c.get("/conversations/no-es-un-id").status_code == 422
         assert c.post("/tasks", json={"pregunta": "hi"}).status_code == 422
         assert c.post("/tasks", json={"pregunta": CONSULTA, "conversation_id": "no-es-un-id"}).status_code == 422
         assert c.post("/tasks", json={"pregunta": CONSULTA, "conversation_id": "0" * 32}).status_code == 404
@@ -165,3 +167,11 @@ def test_sse_transmite_el_progreso_del_grafo():
     assert [p["nodo"] for p in pasos][:3] == ["supervisor", "investigador", "supervisor"]
     assert "sintetizador" in [p["nodo"] for p in pasos]
     assert 'event: estado\ndata: {"status": "DONE"}' in cuerpo
+
+
+def test_mensaje_invalido_en_la_cola_no_frena_al_worker():
+    deps = fabrica()
+    with cliente(deps) as c:
+        c.portal.call(deps.redis.rpush, "ois:queue", '{"job_id": "basura", "tipo": "borrar_todo"}')
+        job = esperar(c, preguntar(c, CONSULTA)["job_id"], {"DONE", "FAILED"})
+    assert job["status"] == "DONE"

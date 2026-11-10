@@ -14,7 +14,7 @@ services:
       retries: 10
 
   phoenix:
-    image: arizephoenix/phoenix:latest
+    image: arizephoenix/phoenix:21.0.0   # versión fija: la probada en las capturas
     ports: ["6006:6006"]                 # UI + colector OTLP/HTTP (/v1/traces)
     environment:
       PHOENIX_WORKING_DIR: /mnt/data

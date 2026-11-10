@@ -19,12 +19,13 @@ from typing import Any
 
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
+from pydantic import ValidationError
 
 from app.core.config import get_settings
 from app.graph.builder import run_config
 from app.graph.state import entrada_turno
 from app.observability import span_job
-from app.services.jobs import JobStatus, JobStore
+from app.services.jobs import JobStatus, JobStore, MensajeCola
 
 logger = logging.getLogger("worker")
 
@@ -90,6 +91,9 @@ class Worker:
                 mensaje = await self.store.desencolar(timeout=1)
             except asyncio.CancelledError:
                 raise
+            except ValidationError as e:     # mensaje mal formado: se descarta sin frenar al worker
+                logger.error("worker-%d: mensaje inválido en la cola, descartado: %s", n, e)
+                continue
             except Exception:
                 logger.exception("worker-%d: error leyendo la cola; reintento en 1 s", n)
                 await asyncio.sleep(1)
@@ -97,17 +101,17 @@ class Worker:
             if mensaje:
                 await self.procesar(mensaje)
 
-    async def procesar(self, mensaje: dict[str, Any]) -> None:
-        job_id, tipo = mensaje["job_id"], mensaje.get("tipo", "start")
+    async def procesar(self, mensaje: MensajeCola) -> None:
+        job_id, tipo = mensaje.job_id, mensaje.tipo
         job = await self.store.obtener(job_id)
         if job is None:
             logger.warning("Job %s no existe (¿expiró?): se descarta", job_id)
             return
         conv = job["conversation_id"]
         cfg = run_config(conv, job_id, tipo)
-        entrada: Any = entrada_turno(job["pregunta"]) if tipo == "start" else Command(resume=mensaje.get("payload", {}))
+        entrada: Any = entrada_turno(job["pregunta"]) if tipo == "start" else Command(resume=mensaje.payload)
         inicio = time.perf_counter()
-        with span_job(job_id, conv, tipo, {"pregunta": job["pregunta"], "payload": mensaje.get("payload")}) as span:
+        with span_job(job_id, conv, tipo, {"pregunta": job["pregunta"], "payload": mensaje.payload}) as span:
             try:
                 await self.store.actualizar(job_id, JobStatus.RUNNING)
                 async for evento in self.graph.astream(entrada, cfg, stream_mode="updates"):

@@ -7,6 +7,7 @@ API REST del sistema (FastAPI). Al arrancar arma todas las capas:
     uvicorn app.api.main:app      (docs interactivas en /docs)
 """
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
@@ -65,7 +66,8 @@ async def construir_dependencias() -> AsyncIterator[Deps]:
         stack.push_async_callback(redis.aclose)
         store = JobStore(redis)
         saver = await stack.enter_async_context(redis_checkpointer())
-        retriever = HybridRetriever(list(cargar_chunks()), await _vector_store())
+        chunks = await asyncio.to_thread(cargar_chunks)   # lectura de archivos + tiktoken: fuera del event loop
+        retriever = HybridRetriever(list(chunks), await _vector_store())
         yield Deps(redis, store, retriever, build_graph(saver, retriever, store.registrar_accion_erp))
 
 

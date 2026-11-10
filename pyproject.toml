@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "ola-erp-intelligence"
 version = "1.0.0"
@@ -30,6 +34,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest==9.2.0", "fakeredis==2.40.0"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore:create_react_agent has been moved"]

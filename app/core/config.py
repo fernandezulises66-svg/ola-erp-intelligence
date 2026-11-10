@@ -2,9 +2,9 @@
 Configuración centralizada y validada con pydantic-settings.
 
 Todo sale de variables de entorno (o del archivo .env): modelos, índice y namespace de Pinecone,
-URL de Redis, límites del grafo, observabilidad. No hay IDs ni nombres de modelo escritos en el
-código. Si una variable tiene un valor inválido (ej.: WORKER_CONCURRENCY=cero), la app no arranca
-y el error dice qué variable revisar.
+URL de Redis, límites del grafo, observabilidad. Los modelos, el índice y el namespace NO tienen
+valor por defecto en el código: si faltan, la app no arranca y el error dice qué variable falta.
+Lo mismo si una variable tiene un valor inválido (ej.: WORKER_CONCURRENCY=0).
 
 Las API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, PINECONE_API_KEY) las leen directamente los SDKs
 desde el entorno; acá solo se valida que estén presentes cuando hacen falta.
@@ -16,12 +16,13 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BASE_DIR / ".env")   # exporta las keys al entorno para los SDKs (en Docker ya vienen por env_file)
 
+# Dimensión de los modelos de embeddings conocidos (para crear el índice); otros: OPENAI_EMBEDDING_DIM
 EMBEDDING_DIMENSIONS = {"text-embedding-3-small": 1536, "text-embedding-3-large": 3072}
 
 
@@ -30,20 +31,21 @@ class Settings(BaseSettings):
 
     # --- LLM ------------------------------------------------------------------------
     llm_provider: Literal["anthropic", "openai"] = "anthropic"
-    anthropic_model: str = "claude-haiku-5-5"
+    anthropic_model: str | None = None                 # obligatorio si LLM_PROVIDER=anthropic
     anthropic_workspace_id: str = ""
-    openai_chat_model: str = "gpt-6-luna"
+    openai_chat_model: str | None = None               # obligatorio si LLM_PROVIDER=openai
     llm_max_tokens: int = Field(2048, ge=256, le=16000)
     llm_timeout_s: float = Field(60, gt=0)
     llm_max_retries: int = Field(2, ge=0, le=6)
 
     # --- RAG (Pinecone + BM25) ----------------------------------------------------------
     rag_mode: Literal["hybrid", "bm25"] = "hybrid"        # bm25 = sin Pinecone/OpenAI (modo degradado)
-    pinecone_index_name: str = "ola-erp-docs"
-    pinecone_namespace: str = "intelligence-v1"
+    pinecone_index_name: str | None = None             # obligatorios si RAG_MODE=hybrid
+    pinecone_namespace: str | None = None
     pinecone_cloud: str = "aws"
     pinecone_region: str = "us-east-1"
-    openai_embedding_model: str = "text-embedding-3-small"
+    openai_embedding_model: str | None = None
+    openai_embedding_dim: int | None = Field(None, ge=64)   # si el modelo no está en la tabla conocida
     data_dir: Path = BASE_DIR / "data" / "manual"
     chunk_size_tokens: int = Field(600, ge=100)
     chunk_overlap_tokens: int = Field(80, ge=0)
@@ -71,10 +73,29 @@ class Settings(BaseSettings):
     phoenix_collector_endpoint: str = "http://localhost:6006/v1/traces"
     phoenix_project_name: str = "ola-erp-intelligence"
 
+    @model_validator(mode="after")
+    def _requeridas(self) -> "Settings":
+        """Modelos, índice y namespace no tienen valor por defecto en el código: vienen del entorno."""
+        faltan = []
+        if self.llm_provider == "anthropic" and not self.anthropic_model:
+            faltan.append("ANTHROPIC_MODEL")
+        if self.llm_provider == "openai" and not self.openai_chat_model:
+            faltan.append("OPENAI_CHAT_MODEL")
+        if self.rag_mode == "hybrid":
+            faltan += [n for n, v in (("PINECONE_INDEX_NAME", self.pinecone_index_name),
+                                      ("PINECONE_NAMESPACE", self.pinecone_namespace),
+                                      ("OPENAI_EMBEDDING_MODEL", self.openai_embedding_model)) if not v]
+            if self.openai_embedding_model and not self.openai_embedding_dim \
+                    and self.openai_embedding_model not in EMBEDDING_DIMENSIONS:
+                faltan.append("OPENAI_EMBEDDING_DIM")
+        if faltan:
+            raise ValueError(f"Faltan variables de configuración: {', '.join(faltan)} (ver .env.example)")
+        return self
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def embedding_dim(self) -> int:
-        return EMBEDDING_DIMENSIONS.get(self.openai_embedding_model, 1536)
+        return self.openai_embedding_dim or EMBEDDING_DIMENSIONS.get(self.openai_embedding_model or "", 0)
 
     def faltantes(self) -> list[str]:
         """API keys que faltan para el modo configurado (se informan al arrancar)."""

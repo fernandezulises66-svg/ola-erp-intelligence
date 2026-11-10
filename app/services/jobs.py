@@ -15,8 +15,9 @@ import json
 import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.core.config import get_settings
@@ -35,6 +36,14 @@ class JobStatus(StrEnum):
 
 
 TERMINALES = {JobStatus.DONE, JobStatus.FAILED}
+
+
+class MensajeCola(BaseModel):
+    """Contrato de los mensajes de la cola (lo que la API encola y el worker consume)."""
+
+    job_id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    tipo: Literal["start", "resume"] = "start"
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 def ahora() -> str:
@@ -136,12 +145,15 @@ class JobStore:
         return [json.loads(e) for e in await self.redis.lrange(f"{P}:job:{job_id}:progreso", desde, -1)]
 
     # --- Cola --------------------------------------------------------------------------
-    async def encolar(self, job_id: str, tipo: str = "start", payload: dict[str, Any] | None = None) -> None:
-        await self.redis.rpush(COLA, json.dumps({"job_id": job_id, "tipo": tipo, "payload": payload or {}}))
+    async def encolar(self, job_id: str, tipo: Literal["start", "resume"] = "start",
+                      payload: dict[str, Any] | None = None) -> None:
+        mensaje = MensajeCola(job_id=job_id, tipo=tipo, payload=payload or {})
+        await self.redis.rpush(COLA, mensaje.model_dump_json())
 
-    async def desencolar(self, timeout: float = 1.0) -> dict[str, Any] | None:
+    async def desencolar(self, timeout: float = 1.0) -> MensajeCola | None:
+        """Devuelve el próximo mensaje validado (un mensaje mal formado lanza ValidationError)."""
         item = await self.redis.blpop([COLA], timeout=timeout)
-        return json.loads(item[1]) if item else None
+        return MensajeCola.model_validate_json(item[1]) if item else None
 
     # --- "ERP" simulado: la herramienta con efectos secundarios -------------------------------
     async def registrar_accion_erp(self, conversation_id: str, accion: dict[str, Any], aprobacion: dict[str, Any]) -> str:

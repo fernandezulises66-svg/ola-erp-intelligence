@@ -3,18 +3,21 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Path, Request, status
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import AIMessage
 
 from app.agents.common import texto_de
-from app.api.schemas import (ApprovalOut, ConversationHistory, ConversationOut, DecisionIn, HealthOut, JobOut,
-                             TaskCreated, TaskIn, Turno)
+from app.api.schemas import (ID_HEX, ApprovalOut, ConversationHistory, ConversationOut, DecisionIn, HealthOut,
+                             JobOut, TaskCreated, TaskIn, Turno)
 from app.core.config import get_settings
 from app.services.jobs import TERMINALES, JobStatus, JobStore
 
 router = APIRouter()
+JobId = Annotated[str, Path(pattern=ID_HEX, description="Identificador del job (32 caracteres hexadecimales)")]
+ConversationId = Annotated[str, Path(pattern=ID_HEX, description="Identificador de la conversación")]
 
 
 def _store(request: Request) -> JobStore:
@@ -42,7 +45,7 @@ async def crear_tarea(tarea: TaskIn, request: Request) -> TaskCreated:
 
 
 @router.get("/tasks/{job_id}", response_model=JobOut, tags=["tareas"])
-async def estado_tarea(job_id: str, request: Request) -> JobOut:
+async def estado_tarea(job_id: JobId, request: Request) -> JobOut:
     job = await _store(request).obtener(job_id)
     if job is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No existe ese job (o ya expiró)")
@@ -50,7 +53,7 @@ async def estado_tarea(job_id: str, request: Request) -> JobOut:
 
 
 @router.get("/tasks/{job_id}/events", tags=["tareas"])
-async def progreso_tarea(job_id: str, request: Request) -> StreamingResponse:
+async def progreso_tarea(job_id: JobId, request: Request) -> StreamingResponse:
     """Server-Sent Events: transmite cada paso del grafo a medida que ocurre, hasta que el job termina o se pausa."""
     store = _store(request)
     if await store.obtener(job_id) is None:
@@ -75,7 +78,7 @@ async def progreso_tarea(job_id: str, request: Request) -> StreamingResponse:
 
 @router.post("/tasks/{job_id}/approve", status_code=status.HTTP_202_ACCEPTED, response_model=ApprovalOut,
              tags=["human-in-the-loop"])
-async def aprobar(job_id: str, decision: DecisionIn, request: Request) -> ApprovalOut:
+async def aprobar(job_id: JobId, decision: DecisionIn, request: Request) -> ApprovalOut:
     """Decisión humana para un job pausado: lo reencola y el worker reanuda el grafo desde el checkpoint."""
     store = _store(request)
     job = await store.obtener(job_id)
@@ -96,7 +99,7 @@ async def crear_conversacion(request: Request) -> ConversationOut:
 
 
 @router.get("/conversations/{conversation_id}", response_model=ConversationHistory, tags=["conversaciones"])
-async def historial_conversacion(conversation_id: str, request: Request) -> ConversationHistory:
+async def historial_conversacion(conversation_id: ConversationId, request: Request) -> ConversationHistory:
     """Historial leído del checkpointer de LangGraph: sobrevive a un reinicio del servidor."""
     deps = request.app.state.deps
     conv = await deps.store.conversacion(conversation_id)

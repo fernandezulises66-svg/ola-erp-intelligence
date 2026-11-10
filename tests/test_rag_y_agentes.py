@@ -64,12 +64,15 @@ def test_buscar_manual_valida_entrada_y_salida():
 
 
 # --- Herramientas del analista (Pydantic) ---------------------------------------------------
+def usar(herramienta, args):
+    return json.loads(asyncio.run(herramienta.ainvoke(args)))
+
+
 def test_herramientas_del_analista():
-    assert json.loads(calcular.invoke({"expresion": "1180000 * (1 - 0.18)"}))["resultado"] == 967600
-    assert json.loads(dias_entre_fechas.invoke({"desde": "28/10/2026", "hasta": "2026-11-10"}))["dias_corridos"] == 13
-    assert json.loads(sumar_dias.invoke({"fecha": "28/10/2026", "dias": 15}))["resultado"] == "2026-11-12"
-    porcion = aplicar_porcentaje.invoke({"monto": 967600, "porcentaje": 50, "operacion": "porcion"})
-    assert json.loads(porcion)["resultado"] == 483800
+    assert usar(calcular, {"expresion": "1180000 * (1 - 0.18)"})["resultado"] == 967600
+    assert usar(dias_entre_fechas, {"desde": "28/10/2026", "hasta": "2026-11-10"})["dias_corridos"] == 13
+    assert usar(sumar_dias, {"fecha": "28/10/2026", "dias": 15})["resultado"] == "2026-11-12"
+    assert usar(aplicar_porcentaje, {"monto": 967600, "porcentaje": 50, "operacion": "porcion"})["resultado"] == 483800
 
 
 @pytest.mark.parametrize("herramienta, args", [
@@ -81,11 +84,11 @@ def test_herramientas_del_analista():
 ])
 def test_entradas_invalidas_se_rechazan(herramienta, args):
     with pytest.raises(ValidationError):
-        herramienta.invoke(args)
+        asyncio.run(herramienta.ainvoke(args))
 
 
 def test_division_por_cero_devuelve_error_tipado():
-    assert "error" in json.loads(calcular.invoke({"expresion": "1 / 0"}))
+    assert "error" in usar(calcular, {"expresion": "1 / 0"})
 
 
 # --- Grafo -------------------------------------------------------------------------------
@@ -124,3 +127,25 @@ def test_configuracion_invalida_no_arranca(monkeypatch):
     monkeypatch.setenv("WORKER_CONCURRENCY", "0")
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_modelos_e_indice_no_tienen_valor_por_defecto(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_MODEL", raising=False)
+    with pytest.raises(ValidationError, match="ANTHROPIC_MODEL"):
+        Settings(_env_file=None)
+    monkeypatch.setenv("ANTHROPIC_MODEL", "x")
+    monkeypatch.setenv("RAG_MODE", "hybrid")
+    for var in ("PINECONE_INDEX_NAME", "PINECONE_NAMESPACE", "OPENAI_EMBEDDING_MODEL"):
+        monkeypatch.delenv(var, raising=False)
+    with pytest.raises(ValidationError, match="PINECONE_INDEX_NAME"):
+        Settings(_env_file=None)
+
+
+def test_mensajes_de_la_cola_se_validan():
+    from app.services.jobs import MensajeCola
+
+    assert MensajeCola(job_id="a" * 32, tipo="resume").payload == {}
+    with pytest.raises(ValidationError):
+        MensajeCola(job_id="no-es-un-id")
+    with pytest.raises(ValidationError):
+        MensajeCola(job_id="a" * 32, tipo="borrar_todo")

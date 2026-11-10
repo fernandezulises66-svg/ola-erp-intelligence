@@ -115,13 +115,13 @@ app/
 └── observability.py  Phoenix / OpenTelemetry / OpenInference
 data/manual/        manual técnico del ERP (8 archivos: Markdown, JSON y un PDF)
 scripts/            pruebas_e2e.py (las 5 pruebas de punta a punta)
-tests/              32 tests sin keys ni servicios externos
+tests/              35 tests sin keys ni servicios externos
 screenshots/        evidencia de trazas en Phoenix
 ```
 
 ## Decisiones de arquitectura
 
-**1. Asíncrono de punta a punta.** Las llamadas a LLMs usan `ainvoke` sobre los SDK async de Anthropic y OpenAI (httpx). Pinecone usa `PineconeAsyncio` y `IndexAsyncio`, los embeddings `aembed_*` y Redis `redis.asyncio`. BM25 consume CPU y no hace I/O, así que corre en `asyncio.to_thread` para no frenar el event loop. No hay `requests` ni clientes síncronos en el código de la API.
+**1. Asíncrono de punta a punta.** Las llamadas a LLMs usan `ainvoke` sobre los SDK async de Anthropic y OpenAI (httpx). Pinecone usa `PineconeAsyncio` y `IndexAsyncio`, los embeddings `aembed_*` y Redis `redis.asyncio`. BM25 y la carga del manual corren en `asyncio.to_thread` para no frenar el event loop. Las herramientas de los agentes son `async def` y se ejecutan con `ainvoke`. No hay `requests` ni clientes síncronos en el código.
 
 **2. Cola y worker en lugar de esperar en el endpoint.** Una pregunta tarda entre 20 y 60 s. Si el endpoint esperara, se trabaría con pocas peticiones. `POST /tasks` responde 202 en milisegundos y N tareas asyncio consumen la cola de Redis. El worker puede correr aparte (`python -m app.services.worker`) para escalar sin cambiar la API.
 
@@ -136,10 +136,11 @@ screenshots/        evidencia de trazas en Phoenix
 **7. Compuerta humana decidida por reglas.** Una compuerta de seguridad no puede depender de que el LLM la respete, así que se activa con verbos de acción en imperativo. Se pausa **después** del análisis, para que el humano decida con toda la información. Antes del `interrupt()` no hay efectos secundarios, porque al reanudar el nodo se vuelve a ejecutar.
 
 **8. Contratos Pydantic en cada frontera.**
-- **API:** entrada y salida de todos los endpoints.
+- **API:** entrada y salida de todos los endpoints, incluidos los parámetros de ruta (`job_id` y `conversation_id` deben ser ids válidos; si no, `422`).
 - **Herramientas:** `args_schema` en cada una. Si el modelo manda un porcentaje de 150 o una fecha imposible, recibe el error y se corrige.
 - **Salidas:** cada herramienta devuelve un modelo serializado.
 - **Decisiones:** el supervisor devuelve `DecisionSupervisor` y el sintetizador `RespuestaFinal`.
+- **Cola:** cada mensaje entre la API y el worker es un `MensajeCola`. Un mensaje mal formado se descarta sin frenar al worker.
 - **Configuración:** `pydantic-settings`. Un valor inválido impide el arranque con un mensaje claro.
 
 **9. Observabilidad que no ensucia.** Phoenix recibe por OTLP los spans de LangChain y LangGraph (OpenInference), más spans propios: `job.*` y `rag.busqueda_hibrida`. La sesión de Phoenix es la conversación. El proveedor de trazas **no se registra como global**, porque si no, la telemetría nativa de FastAPI trazaría cada `GET` del polling y llenaría el dashboard de ruido (lo vimos en el Módulo 7).
@@ -207,10 +208,10 @@ python scripts/pruebas_e2e.py --tras-reinicio    # retoma la conversación de la
 ### Tests
 
 ```bash
-pytest -v      # 32 tests, sin keys ni servicios: Redis falso, MemorySaver y modelos guionados
+pytest -v      # 35 tests, sin keys ni servicios: Redis falso, MemorySaver y modelos guionados
 ```
 
-Cubren la API completa, la cola y el worker, el HITL (aprobación y rechazo), el paso a `FAILED`, 5 tareas concurrentes, la memoria entre turnos, la persistencia entre dos instancias de la app, el SSE, el RAG híbrido (fusión, identificadores exactos y degradación), la validación Pydantic de las herramientas, la compuerta de criticidad y la configuración inválida.
+Cubren la API completa, la cola y el worker, el HITL (aprobación y rechazo), el paso a `FAILED`, 5 tareas concurrentes, la memoria entre turnos, la persistencia entre dos instancias de la app, el SSE, el RAG híbrido (fusión, identificadores exactos y degradación), la validación Pydantic de las herramientas, de los parámetros de ruta y de los mensajes de la cola, la compuerta de criticidad y la configuración inválida o incompleta.
 
 ## Observabilidad
 
@@ -251,13 +252,14 @@ Con Anthropic `claude-haiku-5-5` y Pinecone, las pruebas 1, 2, 4 y 5 corrieron e
 
 ## Configuración
 
-Todo se configura por variables de entorno (ver [`.env.example`](./.env.example)). Estas son las principales:
+Todo se configura por variables de entorno (ver [`.env.example`](./.env.example)). Los **modelos, el índice y el namespace no tienen valor por defecto en el código**: si faltan, la app no arranca y el error dice qué variable completar. Estas son las principales:
 
 | Variable | Default | Para qué |
 |---|---|---|
-| `ANTHROPIC_MODEL` | `claude-haiku-5-5` | Modelo de los agentes (`LLM_PROVIDER=openai` → `OPENAI_CHAT_MODEL`) |
+| `ANTHROPIC_MODEL` | **obligatoria** (ej. `claude-haiku-5-5`) | Modelo de los agentes (`LLM_PROVIDER=openai` → `OPENAI_CHAT_MODEL`) |
 | `RAG_MODE` | `hybrid` | `hybrid` (BM25 + Pinecone) o `bm25` |
-| `PINECONE_INDEX_NAME` / `PINECONE_NAMESPACE` | `ola-erp-docs` / `intelligence-v1` | Índice y namespace (se crean y cargan solos) |
+| `PINECONE_INDEX_NAME` / `PINECONE_NAMESPACE` | **obligatorias** con `RAG_MODE=hybrid` | Índice y namespace (se crean y cargan solos) |
+| `OPENAI_EMBEDDING_MODEL` | **obligatoria** con `RAG_MODE=hybrid` (ej. `text-embedding-3-small`) | Embeddings del RAG |
 | `REDIS_URL` | `redis://localhost:6379/0` | Estado, cola y checkpoints |
 | `WORKER_CONCURRENCY` | `5` | Preguntas en paralelo por proceso |
 | `MAX_DELEGACIONES` / `RECURSION_LIMIT` | `6` / `40` | Frenos del grafo |

@@ -3,6 +3,8 @@ Herramientas de los agentes, con entradas y salidas validadas por Pydantic (ver 
 
 - Investigador: `buscar_manual` → el RAG híbrido (BM25 + Pinecone) es su única fuente.
 - Analista: cálculos deterministas (aritmética segura, fechas, porcentajes): el LLM no hace cuentas.
+  Son `async def` como el resto del sistema (no hacen I/O, así que no ceden el event loop, pero se
+  ejecutan con `ainvoke` dentro del ciclo ReAct asíncrono).
 """
 
 import ast
@@ -58,7 +60,7 @@ def _evaluar(nodo: ast.AST) -> float:
 
 
 @tool(args_schema=CalcularInput)
-def calcular(expresion: str) -> str:
+async def calcular(expresion: str) -> str:
     """Evalúa una expresión aritmética y devuelve el resultado exacto.
     Ejemplos: "1180000 * (1 - 0.18)", "(4200 + 3800) / 2". Sin separadores de miles (1180000, no 1.180.000)."""
     try:
@@ -69,20 +71,20 @@ def calcular(expresion: str) -> str:
 
 
 @tool(args_schema=DiasEntreFechasInput)
-def dias_entre_fechas(desde, hasta) -> str:
+async def dias_entre_fechas(desde, hasta) -> str:
     """Cuenta los días corridos entre dos fechas (ej.: desde que se emitió un presupuesto hasta hoy).
     Devuelve un número positivo si `hasta` es posterior a `desde`."""
     return ResultadoDias(desde=desde, hasta=hasta, dias_corridos=(hasta - desde).days).model_dump_json()
 
 
 @tool(args_schema=SumarDiasInput)
-def sumar_dias(fecha, dias: int) -> str:
+async def sumar_dias(fecha, dias: int) -> str:
     """Suma (o resta, con `dias` negativo) días corridos a una fecha. Sirve para calcular vencimientos."""
     return ResultadoFecha(fecha=fecha, dias=dias, resultado=fecha + timedelta(days=dias)).model_dump_json()
 
 
 @tool(args_schema=AplicarPorcentajeInput)
-def aplicar_porcentaje(monto: float, porcentaje: float, operacion: str) -> str:
+async def aplicar_porcentaje(monto: float, porcentaje: float, operacion: str) -> str:
     """Aplica un porcentaje a un monto en pesos:
     - "descuento": monto con el descuento (1000, 10 → 900)
     - "recargo":   monto con el recargo (1000, 10 → 1100)
