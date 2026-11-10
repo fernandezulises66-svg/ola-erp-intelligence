@@ -16,6 +16,7 @@ import re
 import unicodedata
 from typing import Protocol
 
+import snowballstemmer
 from langchain_core.documents import Document
 
 from app.agents.schemas import Fragmento
@@ -31,17 +32,26 @@ le lo los mas me mi no o para pero por que se si sin sobre su sus un una uno y y
 hace hacer tiene tienen son ser está están puede pueden quien quién cuánto cuanto cuántos cuantos según""".split())
 
 
+_STEMMER = snowballstemmer.stemmer("spanish")
+
+
+def _raiz(tok: str) -> str:
+    """Stemming en español solo para palabras: "descuentos"/"descuento" → "descuent". Los códigos y
+    números (VTA-410-PRES, 15) quedan intactos para que la coincidencia literal siga funcionando."""
+    return tok if any(c.isdigit() for c in tok) or "-" in tok else _STEMMER.stemWord(tok)
+
+
 def tokenize(texto: str) -> list[str]:
-    """Minúsculas y sin acentos; conserva códigos con guiones como un token y además sus partes."""
+    """Minúsculas, sin acentos y con stemming; conserva códigos con guiones como un token y además sus partes."""
     texto = unicodedata.normalize("NFKD", texto.lower())
     texto = "".join(c for c in texto if not unicodedata.combining(c))
     tokens = []
     for tok in re.findall(r"[a-z0-9]+(?:[-_/][a-z0-9]+)*", texto):
         if tok in STOPWORDS:
             continue
-        tokens.append(tok)
+        tokens.append(_raiz(tok))
         if re.search(r"[-_/]", tok):
-            tokens += [p for p in re.split(r"[-_/]", tok) if p and p not in STOPWORDS]
+            tokens += [_raiz(p) for p in re.split(r"[-_/]", tok) if p and p not in STOPWORDS]
     return tokens
 
 

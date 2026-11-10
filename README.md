@@ -115,7 +115,7 @@ app/
 └── observability.py  Phoenix / OpenTelemetry / OpenInference
 data/manual/        manual técnico del ERP (8 archivos: Markdown, JSON y un PDF)
 scripts/            pruebas_e2e.py (las 5 pruebas de punta a punta)
-tests/              31 tests sin keys ni servicios externos
+tests/              32 tests sin keys ni servicios externos
 screenshots/        evidencia de trazas en Phoenix
 ```
 
@@ -129,7 +129,7 @@ screenshots/        evidencia de trazas en Phoenix
 
 **4. Conversaciones con memoria y estado por turno.** El `thread_id` es la conversación. Los mensajes se acumulan entre preguntas, pero la pizarra de contribuciones se **reinicia en cada turno** con un reducer propio, `acumular` con el marcador `REINICIAR`: si no, el supervisor de la pregunta 2 evaluaría la pizarra de la pregunta 1. Los agentes reciben los últimos turnos como contexto (`HISTORIAL_TURNOS`). Solo se permite una pregunta activa por conversación, reservada con `WATCH/MULTI`, porque dos turnos simultáneos pisarían el mismo checkpoint.
 
-**5. RAG híbrido con prioridad de identificadores.** BM25 encuentra términos literales y códigos, y la búsqueda vectorial encuentra paráfrasis. RRF las fusiona premiando el consenso. Cuando la consulta trae un código como `VTA-410-PRES`, los chunks que lo contienen van primero: en el Módulo 4 se midió que RRF podía relegar un chunk que BM25 ponía 1.º y la búsqueda vectorial no traía. Si Pinecone falla, el sistema **degrada a BM25** y lo registra, en lugar de caerse.
+**5. RAG híbrido con prioridad de identificadores.** BM25 encuentra términos literales y códigos, con stemming en español: "descuento" coincide con "descuentos", pero los códigos quedan intactos. La búsqueda vectorial encuentra paráfrasis. RRF las fusiona premiando el consenso. Cuando la consulta trae un código como `VTA-410-PRES`, los chunks que lo contienen van primero: en el Módulo 4 se midió que RRF podía relegar un chunk que BM25 ponía 1.º y la búsqueda vectorial no traía. Si Pinecone falla, el sistema **degrada a BM25** y lo registra, en lugar de caerse.
 
 **6. Supervisor jerárquico con frenos que no dependen del modelo.** El supervisor valida con una rúbrica y un criterio de suficiencia estricto. Ese criterio surgió en el Módulo 6, porque un supervisor demasiado exigente también entra en bucle. Además tiene un tope de delegaciones (6), un tope de revisiones por especialista (2), una regla determinista si el JSON viene mal y el `recursion_limit` como techo duro. Los especialistas reciben **solo su encargo y los datos que necesitan**, sin el historial interno del sistema.
 
@@ -207,7 +207,7 @@ python scripts/pruebas_e2e.py --tras-reinicio    # retoma la conversación de la
 ### Tests
 
 ```bash
-pytest -v      # 31 tests, sin keys ni servicios: Redis falso, MemorySaver y modelos guionados
+pytest -v      # 32 tests, sin keys ni servicios: Redis falso, MemorySaver y modelos guionados
 ```
 
 Cubren la API completa, la cola y el worker, el HITL (aprobación y rechazo), el paso a `FAILED`, 5 tareas concurrentes, la memoria entre turnos, la persistencia entre dos instancias de la app, el SSE, el RAG híbrido (fusión, identificadores exactos y degradación), la validación Pydantic de las herramientas, la compuerta de criticidad y la configuración inválida.

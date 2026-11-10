@@ -48,6 +48,9 @@ CRITERIO DE SUFICIENCIA (estricto, para no entrar en bucles):
 - Si una regla cubre el caso (por ejemplo, un umbral: "más del 15 %" cubre un 18 %), alcanza: no pidas
   que el manual mencione el caso exacto.
 - No pidas trabajo que ya está hecho ni repitas una búsqueda que ya dio resultado.
+- Si el investigador marcó como "no encontrado" algo que el usuario preguntó EXPLÍCITAMENTE y todavía
+  no se reintentó, pedile UNA búsqueda más con otras palabras (sinónimos, el nombre del rol, del módulo o
+  del documento). Si ya se reintentó, aceptalo y finalizá.
 - Si la pregunta es un seguimiento ("¿y si el descuento fuera del 20 %?"), usá el contexto de la
   conversación: las reglas ya citadas ahí valen y no hace falta volver a buscarlas.
 

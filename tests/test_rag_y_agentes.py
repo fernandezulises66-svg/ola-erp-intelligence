@@ -41,6 +41,12 @@ def test_fusion_combina_bm25_y_vectorial():
     assert any("vectorial" in f.metodos for f in resultado)
 
 
+def test_stemming_encuentra_singular_y_plural():
+    # El manual dice "aprobar descuentos mayores al 15 %"; la consulta usa singular y otra conjugación.
+    resultado = buscar(HybridRetriever(list(cargar_chunks()), None), "quién aprueba un descuento del 18 %")
+    assert any("descuentos mayores al 15" in f.texto for f in resultado)
+
+
 def test_si_pinecone_falla_degrada_a_bm25():
     resultado = buscar(HybridRetriever(list(cargar_chunks()), FakeVectorStore(falla=True)), "validez de un presupuesto")
     assert resultado and all(f.metodos == ["bm25"] for f in resultado)
