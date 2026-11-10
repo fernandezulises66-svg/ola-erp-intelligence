@@ -30,20 +30,33 @@ function inline(texto) {
     .replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 
-// Markdown mínimo y seguro (se escapa todo antes de formatear): párrafos, listas, negrita, código.
+// Markdown mínimo y seguro (se escapa todo antes de formatear): párrafos, listas (con numeración real
+// aunque el modelo deje líneas en blanco entre ítems), sub-listas indentadas, negrita y código.
 function markdown(texto) {
   const lineas = String(texto).replace(/\r/g, "").split("\n");
-  let html = "", lista = null;
-  const cerrar = () => { if (lista) { html += `</${lista}>`; lista = null; } };
+  let html = "", lista = null, li = false, sub = false;
+  const cerrarSub = () => { if (sub) { html += "</ul>"; sub = false; } };
+  const cerrarLi = () => { cerrarSub(); if (li) { html += "</li>"; li = false; } };
+  const cerrar = () => { cerrarLi(); if (lista) { html += `</${lista}>`; lista = null; } };
+  const item = (contenido) => { cerrarLi(); html += `<li>${inline(contenido)}`; li = true; };
   for (const cruda of lineas) {
     const linea = cruda.trim();
-    const ul = linea.match(/^[-*]\s+(.*)/), ol = linea.match(/^\d+[.)]\s+(.*)/);
-    if (ul || ol) {
-      const tipo = ul ? "ul" : "ol";
-      if (lista !== tipo) { cerrar(); html += `<${tipo}>`; lista = tipo; }
-      html += `<li>${inline((ul || ol)[1])}</li>`;
+    const indent = cruda.length - cruda.trimStart().length;
+    const ul = linea.match(/^[-*]\s+(.*)/), ol = linea.match(/^(\d+)[.)]\s+(.*)/);
+    if (ul && lista === "ol" && li && indent >= 2) {    // sub-viñeta dentro de un ítem numerado
+      if (!sub) { html += '<ul class="sub">'; sub = true; }
+      html += `<li>${inline(ul[1])}</li>`;
+    } else if (ol) {
+      if (lista !== "ol") { cerrar(); html += `<ol start="${Number(ol[1])}">`; lista = "ol"; }
+      item(ol[2]);
+    } else if (ul) {
+      if (lista !== "ul") { cerrar(); html += "<ul>"; lista = "ul"; }
+      item(ul[1]);
     } else if (!linea) {
-      cerrar();
+      cerrarSub();                                     // una línea en blanco no corta la numeración
+    } else if (li && indent >= 2) {
+      cerrarSub();
+      html += `<p class="cont">${inline(linea)}</p>`;  // continuación del ítem
     } else {
       cerrar();
       html += `<p>${inline(linea)}</p>`;
@@ -112,8 +125,13 @@ function respuestaFinal(resultado, extra = {}) {
   if (resultado.recorrido?.length) chips.push(`<span class="chip chip-accent">${escapar(resultado.recorrido.map((r) => NODOS[r] || r).join(" → "))}</span>`);
   for (const f of resultado.fuentes || []) chips.push(`<span class="chip">${escapar(f)}</span>`);
   if (extra.segundos) chips.push(`<span class="chip">${extra.segundos.toFixed(1)} s</span>`);
-  if (resultado.accion_resultado) chips.push(`<span class="chip chip-good">${escapar(resultado.accion_resultado)}</span>`);
   mensaje("agent", markdown(resultado.respuesta_final || "(sin respuesta)") + (chips.length ? `<div class="msg-meta">${chips.join("")}</div>` : ""));
+  if (resultado.accion_resultado) {
+    // La respuesta se redacta ANTES de la pausa humana; la acción se ejecuta después, solo si se aprueba.
+    const ok = resultado.aprobacion?.aprobado;
+    mensaje("agent", `<p class="msg-action-title">${ok ? "Executed after human approval" : "Not executed: rejected by the reviewer"}</p>` +
+      `<div class="msg-meta"><span class="chip ${ok ? "chip-good" : ""}">${escapar(resultado.accion_resultado)}</span></div>`);
+  }
 }
 
 function mostrarAprobacion(pendiente, { soloAprobar = false } = {}) {

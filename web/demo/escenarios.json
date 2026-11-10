@@ -1,0 +1,572 @@
+{
+  "grabado": "2026-11-10T19:13:39+00:00",
+  "escenarios": [
+    {
+      "id": "presupuesto",
+      "capacidad": "Multi-step reasoning",
+      "pregunta": "Hoy es 10/11/2026. Un cliente pidió el 28/10/2026 un presupuesto por una biblioteca a medida de $1.180.000 y quiere confirmarlo con un 18 % de descuento. Según el manual del ERP: ¿el presupuesto sigue vigente?, ¿cuánto queda el precio con el descuento y cuánto tiene que pagar de seña?, ¿qué rol puede aprobar ese descuento?",
+      "fases": [
+        {
+          "estado": "DONE",
+          "eventos": [
+            {
+              "t": 0,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): No hay contribuciones previas, así que hace falta primero obtener las reglas de negocio del manual antes de calcular o responder."
+            },
+            {
+              "t": 11286,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual, buscar_manual, buscar_manual, buscar_manual · fuentes: 02-autenticacion-y-roles.md, 03-api-ventas.md, 04-integracion-afip.pdf, 05-caja-y-bancos.md, 06-inventario.md, 07-integracion-tiendanube.md, 08-codigos-de-error.json"
+            },
+            {
+              "t": 16317,
+              "nodo": "supervisor",
+              "detalle": "→ analista (llm): Faltan todos los cálculos (vigencia, precio final y seña); las reglas de vigencia, roles y seña ya están citadas con fuente, y la ambigüedad de la base de la seña debe reflejarse en los montos."
+            },
+            {
+              "t": 26658,
+              "nodo": "analista",
+              "detalle": "herramientas: dias_entre_fechas, aplicar_porcentaje, aplicar_porcentaje, aplicar_porcentaje, sumar_dias"
+            },
+            {
+              "t": 31909,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): La seña es un dato que el usuario pidió explícitamente y el manual no define su base de cálculo, así que queda una doble respuesta; corresponde un único reintento con sinónimos antes de cerrar."
+            },
+            {
+              "t": 39336,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual · fuentes: 03-api-ventas.md, 04-integracion-afip.pdf, 06-inventario.md, 08-codigos-de-error.json"
+            },
+            {
+              "t": 43683,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): La ronda 3 dice que el manual no habla de descuentos, pero la ronda 1 citó una regla de roles con fuente. Hay que resolver esa contradicción antes de responder quién aprueba el 18 %."
+            },
+            {
+              "t": 51426,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual · fuentes: 02-autenticacion-y-roles.md, 03-api-ventas.md, 05-caja-y-bancos.md, 06-inventario.md"
+            },
+            {
+              "t": 53914,
+              "nodo": "supervisor",
+              "detalle": "→ sintetizador (llm): Las tres partes de la pregunta están respondidas con fuente: el presupuesto sigue vigente (13 de 15 días), el precio con 18 % de descuento es $967.600 y solo gerencia puede aprobarlo según 02-autenticacion-y-roles.md. La base de cálculo de la seña se buscó dos veces sin resultado, así que el sintetizador debe presentarla como un dato no definido por el manual, con ambas opciones."
+            },
+            {
+              "t": 57721,
+              "nodo": "sintetizador",
+              "detalle": "respuesta lista (1530 caracteres)"
+            },
+            {
+              "t": 57727,
+              "nodo": "evaluar_riesgo",
+              "detalle": "Consulta de solo lectura: no pide ejecutar acciones en el ERP."
+            }
+          ],
+          "duracion_ms": 57727
+        }
+      ],
+      "latencia_s": 60.6,
+      "resultado": {
+        "respuesta_final": "1. **¿El presupuesto sigue vigente?** Sí. El presupuesto del 28/10/2026 tiene 13 días corridos a hoy (10/11/2026). La validez es de 15 días corridos y el manual no distingue por tipo de producto, así que también aplica a muebles a medida. Vence el 12/11/2026 y el error VTA-410-PRES se activa solo después de 15 días [03-api-ventas.md].\n\n2. **Precio con 18 % de descuento.** $1.180.000 × (1 − 0,18) = **$967.600** (cálculo aritmético; el manual no define la fórmula de descuento) [03-api-ventas.md].\n\n3. **Seña a pagar.** El manual exige cobrar el 50 % al confirmar las ventas de muebles a medida [03-api-ventas.md, \"Cuerpo de una venta\"], pero **no define sobre qué monto se calcula**. Las dos opciones son:\n   - Sobre el precio con descuento: $967.600 × 50 % = **$483.800**.\n   - Sobre el precio original: $1.180.000 × 50 % = **$590.000**.\n   Esta diferencia de $106.200 queda sin resolver y tiene que definirla el supervisor o una regla de negocio. No hay ninguna regla específica de seña para la confirmación de presupuestos.\n\n4. **Rol que puede aprobar el descuento.** Solo **`gerencia`**, porque puede \"aprobar descuentos mayores al 15 %\" [02-autenticacion-y-roles.md, \"Roles del sistema\"]. `encargado_local` puede aplicar descuentos de hasta el 15 %, así que no alcanza para el 18 %. El manual no define un umbral para `vendedor` ni un procedimiento de aprobación (pantalla o endpoint).\n\nNota: la aprobación de este descuento queda pendiente de aprobación humana. No se registró ninguna venta ni ningún descuento en el ERP.",
+        "fuentes": [
+          "03-api-ventas.md",
+          "02-autenticacion-y-roles.md",
+          "08-codigos-de-error.json"
+        ],
+        "supuestos": [
+          "La seña se calcularía sobre el precio con descuento o sobre el precio original; el manual no lo define y el resultado cambia ($483.800 vs. $590.000).",
+          "Se asume que el plazo de 15 días corridos se cuenta desde la fecha de emisión del presupuesto (28/10/2026)."
+        ],
+        "recorrido": [
+          "investigador",
+          "analista",
+          "investigador",
+          "investigador",
+          "sintetizador"
+        ],
+        "delegaciones": 4,
+        "contribuciones": [
+          {
+            "agente": "investigador",
+            "ronda": 1,
+            "herramientas": [
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "02-autenticacion-y-roles.md",
+              "03-api-ventas.md",
+              "04-integracion-afip.pdf",
+              "05-caja-y-bancos.md",
+              "06-inventario.md",
+              "07-integracion-tiendanube.md",
+              "08-codigos-de-error.json"
+            ]
+          },
+          {
+            "agente": "analista",
+            "ronda": 2,
+            "herramientas": [
+              "dias_entre_fechas",
+              "aplicar_porcentaje",
+              "aplicar_porcentaje",
+              "aplicar_porcentaje",
+              "sumar_dias"
+            ],
+            "fuentes": []
+          },
+          {
+            "agente": "investigador",
+            "ronda": 3,
+            "herramientas": [
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "03-api-ventas.md",
+              "04-integracion-afip.pdf",
+              "06-inventario.md",
+              "08-codigos-de-error.json"
+            ]
+          },
+          {
+            "agente": "investigador",
+            "ronda": 4,
+            "herramientas": [
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "02-autenticacion-y-roles.md",
+              "03-api-ventas.md",
+              "05-caja-y-bancos.md",
+              "06-inventario.md"
+            ]
+          }
+        ],
+        "es_critica": false,
+        "motivo_criticidad": "Consulta de solo lectura: no pide ejecutar acciones en el ERP.",
+        "accion_propuesta": null,
+        "aprobacion": null,
+        "accion_resultado": ""
+      }
+    },
+    {
+      "id": "seguimiento",
+      "capacidad": "Conversation memory",
+      "seguimiento_de": "presupuesto",
+      "pregunta": "¿Y si el descuento fuera del 20 %? ¿Cuánto quedaría el precio, cuánto la seña y quién lo aprueba?",
+      "fases": [
+        {
+          "estado": "DONE",
+          "eventos": [
+            {
+              "t": 0,
+              "nodo": "supervisor",
+              "detalle": "→ analista (llm): Falta el cálculo numérico del escenario del 20 %, que el analista debe aportar con herramientas; las reglas de seña y de aprobación ya están respaldadas por el investigador en turnos anteriores, así que no hace falta volver a buscarlas."
+            },
+            {
+              "t": 6573,
+              "nodo": "analista",
+              "detalle": "herramientas: aplicar_porcentaje, aplicar_porcentaje, aplicar_porcentaje, calcular"
+            },
+            {
+              "t": 9484,
+              "nodo": "supervisor",
+              "detalle": "→ sintetizador (llm): Las reglas usadas (seña del 50 % y aprobación por gerencia para descuentos mayores al 15 %) ya están citadas en la conversación, y los cálculos del analista son correctos ($944.000, seña de $472.000 o $590.000 según la base). El procedimiento concreto de aprobación no fue preguntado en este seguimiento, así que no bloquea el cierre."
+            },
+            {
+              "t": 12052,
+              "nodo": "sintetizador",
+              "detalle": "respuesta lista (1026 caracteres)"
+            },
+            {
+              "t": 12059,
+              "nodo": "evaluar_riesgo",
+              "detalle": "Consulta de solo lectura: no pide ejecutar acciones en el ERP."
+            }
+          ],
+          "duracion_ms": 12059
+        }
+      ],
+      "latencia_s": 16.7,
+      "resultado": {
+        "respuesta_final": "Con un 20 % de descuento sobre la biblioteca a medida de $1.180.000:\n\n1. **Precio con descuento:** $1.180.000 × (1 − 0,20) = **$944.000**. Es un cálculo aritmético; el manual no define la fórmula de descuento.\n2. **Seña sobre el precio con descuento:** $944.000 × 50 % = **$472.000**.\n3. **Seña sobre el precio original:** $1.180.000 × 50 % = **$590.000**. El manual exige el 50 % de seña pero no define sobre qué base calcularla, así que la diferencia entre ambas opciones ($118.000) queda sin resolver y la debe definir el supervisor o una regla de negocio. [03-api-ventas.md, \"Cuerpo de una venta\"]\n4. **Aprobación:** solo **`gerencia`** puede aprobar descuentos mayores al 15 %, y un 20 % supera ese umbral. `encargado_local` solo llega hasta el 15 %. El manual no define un umbral para `vendedor` ni el procedimiento concreto de aprobación (pantalla o endpoint). [02-autenticacion-y-roles.md, \"Roles del sistema\"]\n\nLa aprobación del descuento queda pendiente de aprobación humana (gerencia). No se registró ninguna venta.",
+        "fuentes": [
+          "03-api-ventas.md",
+          "02-autenticacion-y-roles.md"
+        ],
+        "supuestos": [
+          "El precio con descuento se calcula como precio × (1 − porcentaje), porque el manual no define la fórmula."
+        ],
+        "recorrido": [
+          "analista",
+          "sintetizador"
+        ],
+        "delegaciones": 1,
+        "contribuciones": [
+          {
+            "agente": "analista",
+            "ronda": 1,
+            "herramientas": [
+              "aplicar_porcentaje",
+              "aplicar_porcentaje",
+              "aplicar_porcentaje",
+              "calcular"
+            ],
+            "fuentes": []
+          }
+        ],
+        "es_critica": false,
+        "motivo_criticidad": "Consulta de solo lectura: no pide ejecutar acciones en el ERP.",
+        "accion_propuesta": null,
+        "aprobacion": null,
+        "accion_resultado": ""
+      }
+    },
+    {
+      "id": "codigo",
+      "capacidad": "Hybrid RAG · exact code",
+      "pregunta": "¿Qué significa el error VTA-410-PRES y cómo se soluciona?",
+      "fases": [
+        {
+          "estado": "DONE",
+          "eventos": [
+            {
+              "t": 0,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): No hay contribuciones todavía y la pregunta requiere primero la definición del error y su solución según el manual, que solo el investigador puede aportar con fuente."
+            },
+            {
+              "t": 8213,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual, buscar_manual · fuentes: 03-api-ventas.md, 04-integracion-afip.pdf, 07-integracion-tiendanube.md, 08-codigos-de-error.json"
+            },
+            {
+              "t": 10271,
+              "nodo": "supervisor",
+              "detalle": "→ sintetizador (llm): El investigador respondió el significado (presupuesto vencido por más de 15 días corridos, HTTP 410) y la solución (actualizar precios y generar un presupuesto nuevo), citando fuentes. No hay cálculos pendientes ni contradicciones, y la falta de otras causas documentadas no bloquea la respuesta."
+            },
+            {
+              "t": 12670,
+              "nodo": "sintetizador",
+              "detalle": "respuesta lista (858 caracteres)"
+            },
+            {
+              "t": 12674,
+              "nodo": "evaluar_riesgo",
+              "detalle": "Consulta de solo lectura: no pide ejecutar acciones en el ERP."
+            }
+          ],
+          "duracion_ms": 12674
+        }
+      ],
+      "latencia_s": 15.2,
+      "resultado": {
+        "respuesta_final": "1. **Qué significa VTA-410-PRES:** el presupuesto venció porque pasaron más de 15 días corridos desde su emisión. El error responde HTTP 410 [03-api-ventas.md, sección \"Errores de la API de ventas\"; 08-codigos-de-error.json, pág. 2, catálogo Ventas].\n\n2. **Cómo se soluciona:** actualizar los precios y generar un presupuesto nuevo [03-api-ventas.md; 08-codigos-de-error.json, pág. 2]. Un presupuesto vencido no se puede convertir en venta; solo se pueden convertir presupuestos vigentes con `POST /api/presupuestos/:id/convertir` [03-api-ventas.md, sección \"Endpoints principales\"].\n\n3. **Causas habituales:** no encontrado en el manual. Solo se documenta el vencimiento por más de 15 días; no hay otras causas listadas.\n\nSi el usuario quiere que se genere el presupuesto nuevo o se modifique algo en el ERP, esa acción queda pendiente de aprobación humana.",
+        "fuentes": [
+          "03-api-ventas.md",
+          "08-codigos-de-error.json"
+        ],
+        "supuestos": [],
+        "recorrido": [
+          "investigador",
+          "sintetizador"
+        ],
+        "delegaciones": 1,
+        "contribuciones": [
+          {
+            "agente": "investigador",
+            "ronda": 1,
+            "herramientas": [
+              "buscar_manual",
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "03-api-ventas.md",
+              "04-integracion-afip.pdf",
+              "07-integracion-tiendanube.md",
+              "08-codigos-de-error.json"
+            ]
+          }
+        ],
+        "es_critica": false,
+        "motivo_criticidad": "Consulta de solo lectura: no pide ejecutar acciones en el ERP.",
+        "accion_propuesta": null,
+        "aprobacion": null,
+        "accion_resultado": ""
+      }
+    },
+    {
+      "id": "caja",
+      "capacidad": "Multi-step · cash desk",
+      "pregunta": "Hoy es 10/11/2026. Un cierre de caja dio una diferencia de $7.300. Según el manual, ¿hace falta justificación? ¿Por cuánto supera el umbral?",
+      "fases": [
+        {
+          "estado": "DONE",
+          "eventos": [
+            {
+              "t": 0,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): Todavía no hay contribuciones; para responder si la diferencia de $7.300 requiere justificación y por cuánto supera el umbral necesitamos primero la regla del manual con su fuente."
+            },
+            {
+              "t": 5678,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual, buscar_manual · fuentes: 03-api-ventas.md, 05-caja-y-bancos.md, 06-inventario.md, 08-codigos-de-error.json"
+            },
+            {
+              "t": 8243,
+              "nodo": "supervisor",
+              "detalle": "→ analista (llm): La regla del umbral ya está sustentada con fuente, pero el monto por el que supera el umbral es un cálculo que todavía no hizo el analista."
+            },
+            {
+              "t": 11048,
+              "nodo": "analista",
+              "detalle": "herramientas: calcular"
+            },
+            {
+              "t": 12707,
+              "nodo": "supervisor",
+              "detalle": "→ sintetizador (llm): El investigador citó el umbral de $5.000 con fuente (05-caja-y-bancos.md, 'Cierre diario', paso 3) y el analista calculó con herramienta que la diferencia de $7.300 lo supera en $2.300. Ambas partes de la pregunta están respondidas y no hay contradicciones."
+            },
+            {
+              "t": 15283,
+              "nodo": "sintetizador",
+              "detalle": "respuesta lista (936 caracteres)"
+            },
+            {
+              "t": 15288,
+              "nodo": "evaluar_riesgo",
+              "detalle": "Consulta de solo lectura: no pide ejecutar acciones en el ERP."
+            }
+          ],
+          "duracion_ms": 15288
+        }
+      ],
+      "latencia_s": 18.2,
+      "resultado": {
+        "respuesta_final": "1. **¿Hace falta justificación?** Sí. Según el manual, el umbral de diferencia en el cierre de caja es de **$5.000 en valor absoluto** (\"en más o en menos\"), y la diferencia de $7.300 lo supera [05-caja-y-bancos.md, sección \"Cierre diario\", paso 3]. Por eso el campo `justificacion` es obligatorio. Si falta, la API responde `422` con código `CAJA-422-JUST` [05-caja-y-bancos.md, \"Cierre diario\", paso 3]. El catálogo de errores confirma la misma regla [08-codigos-de-error.json, Caja].\n\n2. **¿Por cuánto supera el umbral?** Por **$2.300** ($7.300 − $5.000) [05-caja-y-bancos.md, \"Cierre diario\", paso 3].\n\nNotas:\n- La fecha de hoy (10/11/2026) no cambia el resultado: el manual no tiene excepciones por fecha ni por tipo de caja [05-caja-y-bancos.md].\n- El manual no define un umbral en porcentaje, así que no se aplicó ninguno.\n- Si querés que se registre la justificación o el cierre, esa acción queda pendiente de aprobación humana.",
+        "fuentes": [
+          "05-caja-y-bancos.md",
+          "08-codigos-de-error.json"
+        ],
+        "supuestos": [
+          "Se asume que la diferencia de $7.300 corresponde a un cierre diario, único caso al que el manual aplica la regla."
+        ],
+        "recorrido": [
+          "investigador",
+          "analista",
+          "sintetizador"
+        ],
+        "delegaciones": 2,
+        "contribuciones": [
+          {
+            "agente": "investigador",
+            "ronda": 1,
+            "herramientas": [
+              "buscar_manual",
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "03-api-ventas.md",
+              "05-caja-y-bancos.md",
+              "06-inventario.md",
+              "08-codigos-de-error.json"
+            ]
+          },
+          {
+            "agente": "analista",
+            "ronda": 2,
+            "herramientas": [
+              "calcular"
+            ],
+            "fuentes": []
+          }
+        ],
+        "es_critica": false,
+        "motivo_criticidad": "Consulta de solo lectura: no pide ejecutar acciones en el ERP.",
+        "accion_propuesta": null,
+        "aprobacion": null,
+        "accion_resultado": ""
+      }
+    },
+    {
+      "id": "aprobacion",
+      "capacidad": "Human approval",
+      "pregunta": "Hoy es 10/11/2026. Aplicá un descuento del 18 % al presupuesto P-1042 de $1.180.000 (biblioteca a medida, emitido el 28/10/2026) y registralo en el ERP con la seña que corresponda.",
+      "fases": [
+        {
+          "estado": "WAITING_APPROVAL",
+          "eventos": [
+            {
+              "t": 0,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): No hay contribuciones previas y la consulta depende de reglas de descuento y de seña que todavía no están verificadas en el manual."
+            },
+            {
+              "t": 14077,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual, buscar_manual, buscar_manual, buscar_manual, buscar_manual · fuentes: 02-autenticacion-y-roles.md, 03-api-ventas.md, 04-integracion-afip.pdf, 05-caja-y-bancos.md, 06-inventario.md, 08-codigos-de-error.json"
+            },
+            {
+              "t": 19089,
+              "nodo": "supervisor",
+              "detalle": "→ investigador (llm): El descuento del 18 % supera el límite de 15 % del encargado_local, y el procedimiento para registrarlo es explícitamente pedido por el usuario y aún no se reintentó su búsqueda."
+            },
+            {
+              "t": 29444,
+              "nodo": "investigador",
+              "detalle": "herramientas: buscar_manual, buscar_manual, buscar_manual, buscar_manual · fuentes: 02-autenticacion-y-roles.md, 03-api-ventas.md, 04-integracion-afip.pdf, 06-inventario.md, 08-codigos-de-error.json"
+            },
+            {
+              "t": 33388,
+              "nodo": "supervisor",
+              "detalle": "→ analista (llm): Faltan los cálculos de monto con descuento, seña y vigencia; las reglas necesarias ya están aportadas con fuente, y la búsqueda del procedimiento de descuento ya se reintentó sin resultados."
+            },
+            {
+              "t": 42512,
+              "nodo": "analista",
+              "detalle": "herramientas: aplicar_porcentaje, aplicar_porcentaje, sumar_dias, dias_entre_fechas, aplicar_porcentaje, dias_entre_fechas"
+            },
+            {
+              "t": 46349,
+              "nodo": "supervisor",
+              "detalle": "→ sintetizador (llm): Las reglas de roles, vigencia y seña están citadas con fuente, los cálculos son correctos y la búsqueda del procedimiento de descuento ya se reintentó sin resultado. El sintetizador debe informar que el descuento del 18 % requiere aprobación de gerencia, que el manual no describe cómo registrarlo y que el presupuesto vence el 12/11/2026."
+            },
+            {
+              "t": 51364,
+              "nodo": "sintetizador",
+              "detalle": "respuesta lista (2111 caracteres)"
+            },
+            {
+              "t": 51369,
+              "nodo": "evaluar_riesgo",
+              "detalle": "Pide ejecutar una acción con efectos secundarios en el ERP ('Aplicá' → aplicar_descuento)."
+            },
+            {
+              "t": 51377,
+              "nodo": "aprobacion_humana",
+              "detalle": "pausado: esperando aprobación humana"
+            }
+          ],
+          "duracion_ms": 51377,
+          "aprobacion_pendiente": {
+            "tipo": "aprobacion_requerida",
+            "motivo": "Pide ejecutar una acción con efectos secundarios en el ERP ('Aplicá' → aplicar_descuento).",
+            "accion_propuesta": {
+              "tipo": "aplicar_descuento",
+              "descripcion": "Aplicar descuento: Hoy es 10/11/2026. Aplicá un descuento del 18 % al presupuesto P-1042 de $1.180.000 (biblioteca a medida, emitido el 28/10/2026) y registralo en el ERP con la seña que corresponda.",
+              "detalle": "**Resumen:** No pude registrar el descuento ni la seña en el ERP. El manual no describe cómo modificar un presupuesto existente para aplicarle un descuento, así que la acción queda pendiente de aprobación humana. Lo que sí puedo dejar armado es el análisis:\n\n1. **Cálculo del descuento:** $1.180.000 × 18 % = $212.400. Precio final con descuento: **$967.600**. Los cálculos son correctos según el análisis del especialista.\n\n2. **Autorización (requiere gerencia):** El rol `encargado_local` puede aplicar descuentos de hasta 15 %, y `gerencia` aprueba los mayores al 15 % [02-autenticacion-y-roles.md]. Como el 18 % supera el 15 %, hace falta aprobación de gerencia. No hay constancia de esa aprobación.\n\n3. **Procedimiento de registro (no encontrado):** El manual no tiene un endpoint ni un flujo para aplicar un descuento sobre un presupuesto, ni un flujo de aprobación de descuentos. Se confirmó en dos búsquedas [03-api-ventas.md, 02-autenticacion-y-roles.md]. Hay que consultarlo con sistemas.\n\n4. **Seña del 50 %:** Sobre $967.600 la seña sería **$483.800**. La regla de cobrar el 50 % en muebles a medida figura en la creación de la venta (`POST /api/ventas`), no en el presupuesto [03-api-ventas.md]. Se aplicaría al convertir o crear la venta. **No encontré un plazo de pago de la seña en el manual.**\n\n5. **Vigencia del presupuesto:** Son 15 días corridos desde el 28/10/2026, así que vence el **12/11/2026**. Hoy (10/11/2026) quedan **2 días** y el presupuesto sigue vigente [03-api-ventas.md]. Si vence antes de convertirlo, el error `VTA-410-PRES` exige actualizar precios y generar un presupuesto nuevo [03-api-ventas.md, 08-codigos-de-error.json].\n\n6. **Pasos pendientes:**\n   - Obtener la aprobación de gerencia para el 18 %.\n   - Confirmar con sistemas el canal para registrar el descuento en P-1042.\n   - Registrar la seña de $483.800 al convertir la venta y confirmar el movimiento de caja en Efectivo o Banco [05-caja-y-bancos.md].\n   - Convertir antes del 12/11/2026.\n\n**Qué no quedó resuelto:** el canal para registrar el descuento, el plazo de pago de la seña y la aprobación de gerencia."
+            },
+            "como_responder": "POST /tasks/{job_id}/approve con {\"aprobado\": true|false, \"revisor\": \"...\", \"comentario\": \"...\"}"
+          }
+        },
+        {
+          "estado": "DONE",
+          "eventos": [
+            {
+              "t": 0,
+              "nodo": "aprobacion_humana",
+              "detalle": "decisión: {'aprobado': True, 'revisor': 'gerencia', 'comentario': 'grabación de la demo'}"
+            },
+            {
+              "t": 5,
+              "nodo": "ejecutar_accion",
+              "detalle": "Acción 'aplicar_descuento' registrada en el ERP (registro #2), aprobada por gerencia."
+            }
+          ],
+          "duracion_ms": 5
+        }
+      ],
+      "latencia_s": 56.1,
+      "resultado": {
+        "respuesta_final": "**Resumen:** No pude registrar el descuento ni la seña en el ERP. El manual no describe cómo modificar un presupuesto existente para aplicarle un descuento, así que la acción queda pendiente de aprobación humana. Lo que sí puedo dejar armado es el análisis:\n\n1. **Cálculo del descuento:** $1.180.000 × 18 % = $212.400. Precio final con descuento: **$967.600**. Los cálculos son correctos según el análisis del especialista.\n\n2. **Autorización (requiere gerencia):** El rol `encargado_local` puede aplicar descuentos de hasta 15 %, y `gerencia` aprueba los mayores al 15 % [02-autenticacion-y-roles.md]. Como el 18 % supera el 15 %, hace falta aprobación de gerencia. No hay constancia de esa aprobación.\n\n3. **Procedimiento de registro (no encontrado):** El manual no tiene un endpoint ni un flujo para aplicar un descuento sobre un presupuesto, ni un flujo de aprobación de descuentos. Se confirmó en dos búsquedas [03-api-ventas.md, 02-autenticacion-y-roles.md]. Hay que consultarlo con sistemas.\n\n4. **Seña del 50 %:** Sobre $967.600 la seña sería **$483.800**. La regla de cobrar el 50 % en muebles a medida figura en la creación de la venta (`POST /api/ventas`), no en el presupuesto [03-api-ventas.md]. Se aplicaría al convertir o crear la venta. **No encontré un plazo de pago de la seña en el manual.**\n\n5. **Vigencia del presupuesto:** Son 15 días corridos desde el 28/10/2026, así que vence el **12/11/2026**. Hoy (10/11/2026) quedan **2 días** y el presupuesto sigue vigente [03-api-ventas.md]. Si vence antes de convertirlo, el error `VTA-410-PRES` exige actualizar precios y generar un presupuesto nuevo [03-api-ventas.md, 08-codigos-de-error.json].\n\n6. **Pasos pendientes:**\n   - Obtener la aprobación de gerencia para el 18 %.\n   - Confirmar con sistemas el canal para registrar el descuento en P-1042.\n   - Registrar la seña de $483.800 al convertir la venta y confirmar el movimiento de caja en Efectivo o Banco [05-caja-y-bancos.md].\n   - Convertir antes del 12/11/2026.\n\n**Qué no quedó resuelto:** el canal para registrar el descuento, el plazo de pago de la seña y la aprobación de gerencia.",
+        "fuentes": [
+          "02-autenticacion-y-roles.md",
+          "03-api-ventas.md",
+          "05-caja-y-bancos.md",
+          "08-codigos-de-error.json"
+        ],
+        "supuestos": [
+          "La seña del 50 % se calcula sobre el precio con descuento ($967.600). Si gerencia no aprueba el 18 %, el cálculo cambia.",
+          "Se asume que el presupuesto no fue modificado ni convertido antes de hoy."
+        ],
+        "recorrido": [
+          "investigador",
+          "investigador",
+          "analista",
+          "sintetizador"
+        ],
+        "delegaciones": 3,
+        "contribuciones": [
+          {
+            "agente": "investigador",
+            "ronda": 1,
+            "herramientas": [
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "02-autenticacion-y-roles.md",
+              "03-api-ventas.md",
+              "04-integracion-afip.pdf",
+              "05-caja-y-bancos.md",
+              "06-inventario.md",
+              "08-codigos-de-error.json"
+            ]
+          },
+          {
+            "agente": "investigador",
+            "ronda": 2,
+            "herramientas": [
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual",
+              "buscar_manual"
+            ],
+            "fuentes": [
+              "02-autenticacion-y-roles.md",
+              "03-api-ventas.md",
+              "04-integracion-afip.pdf",
+              "06-inventario.md",
+              "08-codigos-de-error.json"
+            ]
+          },
+          {
+            "agente": "analista",
+            "ronda": 3,
+            "herramientas": [
+              "aplicar_porcentaje",
+              "aplicar_porcentaje",
+              "sumar_dias",
+              "dias_entre_fechas",
+              "aplicar_porcentaje",
+              "dias_entre_fechas"
+            ],
+            "fuentes": []
+          }
+        ],
+        "es_critica": true,
+        "motivo_criticidad": "Pide ejecutar una acción con efectos secundarios en el ERP ('Aplicá' → aplicar_descuento).",
+        "accion_propuesta": {
+          "tipo": "aplicar_descuento",
+          "descripcion": "Aplicar descuento: Hoy es 10/11/2026. Aplicá un descuento del 18 % al presupuesto P-1042 de $1.180.000 (biblioteca a medida, emitido el 28/10/2026) y registralo en el ERP con la seña que corresponda.",
+          "detalle": "**Resumen:** No pude registrar el descuento ni la seña en el ERP. El manual no describe cómo modificar un presupuesto existente para aplicarle un descuento, así que la acción queda pendiente de aprobación humana. Lo que sí puedo dejar armado es el análisis:\n\n1. **Cálculo del descuento:** $1.180.000 × 18 % = $212.400. Precio final con descuento: **$967.600**. Los cálculos son correctos según el análisis del especialista.\n\n2. **Autorización (requiere gerencia):** El rol `encargado_local` puede aplicar descuentos de hasta 15 %, y `gerencia` aprueba los mayores al 15 % [02-autenticacion-y-roles.md]. Como el 18 % supera el 15 %, hace falta aprobación de gerencia. No hay constancia de esa aprobación.\n\n3. **Procedimiento de registro (no encontrado):** El manual no tiene un endpoint ni un flujo para aplicar un descuento sobre un presupuesto, ni un flujo de aprobación de descuentos. Se confirmó en dos búsquedas [03-api-ventas.md, 02-autenticacion-y-roles.md]. Hay que consultarlo con sistemas.\n\n4. **Seña del 50 %:** Sobre $967.600 la seña sería **$483.800**. La regla de cobrar el 50 % en muebles a medida figura en la creación de la venta (`POST /api/ventas`), no en el presupuesto [03-api-ventas.md]. Se aplicaría al convertir o crear la venta. **No encontré un plazo de pago de la seña en el manual.**\n\n5. **Vigencia del presupuesto:** Son 15 días corridos desde el 28/10/2026, así que vence el **12/11/2026**. Hoy (10/11/2026) quedan **2 días** y el presupuesto sigue vigente [03-api-ventas.md]. Si vence antes de convertirlo, el error `VTA-410-PRES` exige actualizar precios y generar un presupuesto nuevo [03-api-ventas.md, 08-codigos-de-error.json].\n\n6. **Pasos pendientes:**\n   - Obtener la aprobación de gerencia para el 18 %.\n   - Confirmar con sistemas el canal para registrar el descuento en P-1042.\n   - Registrar la seña de $483.800 al convertir la venta y confirmar el movimiento de caja en Efectivo o Banco [05-caja-y-bancos.md].\n   - Convertir antes del 12/11/2026.\n\n**Qué no quedó resuelto:** el canal para registrar el descuento, el plazo de pago de la seña y la aprobación de gerencia."
+        },
+        "aprobacion": {
+          "aprobado": true,
+          "revisor": "gerencia",
+          "comentario": "grabación de la demo"
+        },
+        "accion_resultado": "Acción 'aplicar_descuento' registrada en el ERP (registro #2), aprobada por gerencia."
+      }
+    }
+  ]
+}

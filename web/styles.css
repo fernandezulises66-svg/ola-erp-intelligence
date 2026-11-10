@@ -99,6 +99,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .msg-agent p + p, .msg-agent ul, .msg-agent ol { margin-top: 8px; }
 .msg-agent ul, .msg-agent ol { padding-left: 20px; margin-bottom: 0; }
 .msg-agent li + li { margin-top: 4px; }
+.msg-agent ul.sub { margin-top: 4px; padding-left: 18px; }
+.msg-agent p.cont { margin: 4px 0 0 0; color: var(--foreground); }
+.msg-agent ol > p.cont, .msg-agent ul > p.cont { margin-left: 0; }
 .msg-agent code { font-family: "Geist Mono", monospace; font-size: 13px; background: var(--surface-hover); padding: 1px 5px; border-radius: 4px; }
 .msg-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .chip {
@@ -107,6 +110,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 .chip-accent { color: var(--accent); border-color: rgba(79, 143, 239, 0.3); background: var(--accent-soft); }
 .chip-good { color: var(--good); border-color: rgba(63, 181, 127, 0.3); background: var(--good-soft); }
+.msg-action-title { font-weight: 600; color: var(--good); font-size: 13.5px; }
+.msg-action-title + .msg-meta { margin-top: 6px; padding-top: 0; border-top: 0; }
 .msg-thinking { color: var(--muted); font-style: italic; }
 .msg-error { border-color: rgba(229, 96, 79, 0.4); color: #f2b2a9; }
 
