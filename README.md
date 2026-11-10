@@ -23,6 +23,12 @@ docker compose up --build        # o ./run.sh  ·  .\run.ps1 en Windows
 5. Si el usuario dice **"aplicá el descuento y registralo"**, el grafo se pausa en `WAITING_APPROVAL`. Solo ejecuta la acción después de `POST /tasks/{id}/approve`.
 6. La pregunta siguiente en la misma conversación, por ejemplo "¿y si fuera el 20 %?", se responde con el contexto anterior, incluso después de reiniciar el servidor.
 
+## Demo web
+
+La API sirve una interfaz web en **http://localhost:8000** con un chat, el **grafo de agentes que se ilumina en vivo** a medida que llegan los pasos por SSE y la tarjeta de **aprobación humana** con los botones para aprobar o rechazar.
+
+La misma página funciona como **sitio estático** (por ejemplo, en Vercel): si no encuentra la API, pasa a **modo replay** y reproduce corridas reales grabadas con `python scripts/grabar_demo.py` en [`web/demo/escenarios.json`](./web/demo). Muestra los mismos pasos y textos que la corrida real, con los tiempos comprimidos.
+
 ## Arquitectura
 
 ```mermaid
@@ -114,8 +120,9 @@ app/
 ├── services/       jobs.py (estado, cola, conversaciones y ERP en Redis), worker.py
 └── observability.py  Phoenix / OpenTelemetry / OpenInference
 data/manual/        manual técnico del ERP (8 archivos: Markdown, JSON y un PDF)
-scripts/            pruebas_e2e.py (las 5 pruebas de punta a punta)
-tests/              35 tests sin keys ni servicios externos
+scripts/            pruebas_e2e.py (las 5 pruebas de punta a punta), grabar_demo.py (graba corridas para la demo)
+web/                demo web: index.html, app.js, styles.css (modo live con la API o replay estático)
+tests/              36 tests sin keys ni servicios externos
 screenshots/        evidencia de trazas en Phoenix
 ```
 
@@ -208,7 +215,7 @@ python scripts/pruebas_e2e.py --tras-reinicio    # retoma la conversación de la
 ### Tests
 
 ```bash
-pytest -v      # 35 tests, sin keys ni servicios: Redis falso, MemorySaver y modelos guionados
+pytest -v      # 36 tests, sin keys ni servicios: Redis falso, MemorySaver y modelos guionados
 ```
 
 Cubren la API completa, la cola y el worker, el HITL (aprobación y rechazo), el paso a `FAILED`, 5 tareas concurrentes, la memoria entre turnos, la persistencia entre dos instancias de la app, el SSE, el RAG híbrido (fusión, identificadores exactos y degradación), la validación Pydantic de las herramientas, de los parámetros de ruta y de los mensajes de la cola, la compuerta de criticidad y la configuración inválida o incompleta.

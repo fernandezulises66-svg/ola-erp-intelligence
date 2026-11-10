@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERP Intelligence System · Demo</title>
+  <meta name="description" content="Multi-agent AI system over an ERP knowledge base: hybrid RAG, supervisor-led agents, human approval and full tracing.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div>
+        <h1>ERP Intelligence System</h1>
+        <p class="subtitle">Hybrid RAG · Supervisor-led agents · Human-in-the-loop · Traced</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="mode-pill" class="pill pill-muted" title="">Connecting…</span>
+      <a class="link-btn" href="https://github.com/fernandezulises66-svg/ola-erp-intelligence" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Conversación -->
+    <section class="panel chat" aria-labelledby="chat-title">
+      <div class="panel-head">
+        <h2 id="chat-title">Conversation</h2>
+        <button id="new-conv" class="ghost-btn" type="button">New conversation</button>
+      </div>
+      <p class="hint" id="lang-note">The system serves a fictional Argentine furniture company, so questions and answers are in Spanish.</p>
+
+      <div id="messages" class="messages" aria-live="polite">
+        <div class="empty" id="empty-state">
+          <p class="empty-title">Ask about the ERP manual</p>
+          <p>Pick an example below. The supervisor will delegate to a researcher (hybrid RAG over the manual) and an analyst (deterministic calculations), then validate before answering.</p>
+        </div>
+      </div>
+
+      <div id="examples" class="examples" aria-label="Example questions"></div>
+
+      <form id="ask-form" class="ask">
+        <label class="sr-only" for="question">Question</label>
+        <textarea id="question" rows="2" placeholder="Escribí una pregunta sobre el ERP…" maxlength="2000"></textarea>
+        <button id="send" class="primary-btn" type="submit">Send</button>
+      </form>
+    </section>
+
+    <!-- Lo que pasa adentro -->
+    <section class="panel inside" aria-labelledby="inside-title">
+      <div class="panel-head">
+        <h2 id="inside-title">Under the hood</h2>
+        <span id="job-pill" class="pill pill-muted">Idle</span>
+      </div>
+
+      <figure class="graph-wrap">
+        <svg id="graph" viewBox="0 0 520 330" role="img" aria-label="Agent graph: supervisor delegates to researcher and analyst, then synthesizer, risk check and optional human approval">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0L10 5L0 10z" fill="#3a4559"/>
+            </marker>
+          </defs>
+          <g class="edges" fill="none" stroke="#3a4559" stroke-width="1.25">
+            <path d="M260 66V96" marker-end="url(#arrow)"/>
+            <path d="M196 136L96 172" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+            <path d="M150 174L250 138" marker-end="url(#arrow)"/>
+            <path d="M324 136L424 172" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+            <path d="M370 174L270 138" marker-end="url(#arrow)"/>
+            <path d="M260 136V224" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+            <path d="M260 256V284" marker-end="url(#arrow)"/>
+            <path d="M330 300H372" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+            <path d="M440 284V264" marker-end="url(#arrow)"/>
+          </g>
+          <g class="node" data-node="start"><rect x="220" y="34" width="80" height="32" rx="16"/><text x="260" y="54">START</text></g>
+          <g class="node" data-node="supervisor"><rect x="190" y="98" width="140" height="38" rx="8"/><text x="260" y="122">Supervisor</text></g>
+          <g class="node" data-node="investigador"><rect x="30" y="174" width="150" height="38" rx="8"/><text x="105" y="191">Researcher</text><text class="sub" x="105" y="205">hybrid RAG</text></g>
+          <g class="node" data-node="analista"><rect x="340" y="174" width="150" height="38" rx="8"/><text x="415" y="191">Analyst</text><text class="sub" x="415" y="205">calc tools</text></g>
+          <g class="node" data-node="sintetizador"><rect x="190" y="226" width="140" height="30" rx="8"/><text x="260" y="246">Synthesizer</text></g>
+          <g class="node" data-node="evaluar_riesgo"><rect x="190" y="286" width="140" height="30" rx="8"/><text x="260" y="306">Risk check</text></g>
+          <g class="node" data-node="aprobacion_humana"><rect x="374" y="286" width="132" height="30" rx="8"/><text x="440" y="306">Human approval</text></g>
+          <g class="node" data-node="ejecutar_accion"><rect x="374" y="230" width="132" height="32" rx="8"/><text x="440" y="251">ERP action</text></g>
+        </svg>
+        <figcaption class="hint">Dashed arrows are conditional edges decided by the supervisor or the risk check.</figcaption>
+      </figure>
+
+      <div id="approval" class="approval" hidden>
+        <p class="approval-title">Human approval required</p>
+        <p id="approval-desc" class="approval-desc"></p>
+        <div class="approval-actions">
+          <button id="approve" class="primary-btn" type="button">Approve as manager</button>
+          <button id="reject" class="ghost-btn" type="button">Reject</button>
+        </div>
+      </div>
+
+      <h3 class="timeline-title">Execution steps</h3>
+      <ol id="timeline" class="timeline"><li class="timeline-empty">Steps stream here in real time (Server-Sent Events).</li></ol>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Fictional company and data. Built with FastAPI, LangGraph, Redis, Pinecone, Anthropic Claude and Arize Phoenix. <span id="replay-note"></span></p>
+  </footer>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>

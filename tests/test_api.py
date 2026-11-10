@@ -175,3 +175,12 @@ def test_mensaje_invalido_en_la_cola_no_frena_al_worker():
         c.portal.call(deps.redis.rpush, "ois:queue", '{"job_id": "basura", "tipo": "borrar_todo"}')
         job = esperar(c, preguntar(c, CONSULTA)["job_id"], {"DONE", "FAILED"})
     assert job["status"] == "DONE"
+
+
+def test_demo_web_servida_por_la_api():
+    with cliente(fabrica()) as c:
+        r = c.get("/", follow_redirects=False)
+        assert r.status_code == 307 and r.headers["location"] == "/ui/"
+        pagina = c.get("/ui/")
+        assert pagina.status_code == 200 and "ERP Intelligence System" in pagina.text
+        assert c.get("/ui/app.js").status_code == 200

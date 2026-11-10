@@ -14,11 +14,13 @@ from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontext
 from dataclasses import dataclass
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from langgraph.graph.state import CompiledStateGraph
 from redis.asyncio import Redis, from_url
 
 from app.api.routes import router
-from app.core.config import get_settings
+from app.core.config import BASE_DIR, get_settings
 from app.core.logging import setup_logging
 from app.graph.builder import build_graph, redis_checkpointer
 from app.observability import init_observability
@@ -93,6 +95,14 @@ def create_app(deps_factory: Callable[[], AbstractAsyncContextManager[Deps]] | N
     app = FastAPI(title="OLA Muebles · ERP Intelligence System", version="1.0.0", lifespan=lifespan,
                   description="RAG híbrido + agentes con supervisor + aprobación humana, con trazas en Arize Phoenix.")
     app.include_router(router)
+
+    web = BASE_DIR / "web"
+    if web.is_dir():   # demo web: chat + grafo en vivo (SSE) + aprobación humana
+        app.mount("/ui", StaticFiles(directory=web, html=True), name="ui")
+
+        @app.get("/", include_in_schema=False)
+        async def inicio() -> RedirectResponse:
+            return RedirectResponse("/ui/")
     return app
 
 
