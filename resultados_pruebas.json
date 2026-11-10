@@ -1,0 +1,82 @@
+{
+  "resultados": [
+    {
+      "prueba": 1,
+      "job_id": "5d7e1a82277d4de5b4d7cfcea0d274c7",
+      "conversation_id": "c72b5a3cbcd74a288a1f2b87d2fc148c",
+      "status": "DONE",
+      "latencia_s": 14.2,
+      "recorrido": "investigador → sintetizador",
+      "fuentes": [
+        "03-api-ventas.md",
+        "08-codigos-de-error.json"
+      ],
+      "accion": "",
+      "error": null,
+      "respuesta": "1. **Qué significa VTA-410-PRES:** el presupuesto venció, es decir, pasaron más de 15 días corridos desde que se creó. Corresponde al HTTP 410 [03-api-ventas.md, sección \"Errores de la API de ventas\"; 08-codigos-de-error.json, pág. 2, Ventas].\n\n2. **Cómo se soluciona:** actualizar los precios y generar un presupuesto nuevo [03-api-ventas.md, \"Errores de la API de ventas\"; 08-codigos-de-error.json, pág. 2].\n\n3. **Contexto útil:** la validez de un presupuesto es de 15 días corridos (`POST /api/presupuestos`), y solo los presupuestos vigentes pueden convertirse en venta (`POST /api/presupuestos/:id/convertir`) [03-api-ventas.md, \"Endpoints principales\"].\n\n**Lo que no quedó resuelto:** el manual no indica el módulo exacto de la interfaz donde aparece el error ni los pasos de la interfaz para regenerar el presupuesto; sólo está documentada la solución general descrita arriba."
+    },
+    {
+      "prueba": 2,
+      "job_id": "bce19991f96447a19c5fa25a5d731138",
+      "conversation_id": "6ed1bce4ec6c4950a0a50110bf7fcbd8",
+      "status": "DONE",
+      "latencia_s": 48.4,
+      "recorrido": "investigador → analista → investigador → sintetizador",
+      "fuentes": [
+        "03-api-ventas.md",
+        "02-autenticacion-y-roles.md",
+        "08-codigos-de-error.json"
+      ],
+      "accion": "",
+      "error": null,
+      "respuesta": "1. **¿Sigue vigente el presupuesto?** Sí. La validez es de 15 días corridos [03-api-ventas.md, \"Endpoints principales\"]. Desde el 28/10/2026 al 10/11/2026 pasaron 13 días corridos, así que está dentro del plazo (quedan 2 días). El manual no aclara desde qué día se cuenta el plazo, pero con cualquier convención habitual el resultado es el mismo.\n\n2. **Precio con 18 % de descuento y seña.** El precio con descuento es $967.600 ($1.180.000 × 0,82; descuento de $212.400). La seña del 50 % es de $483.800, calculada sobre el precio descontado [03-api-ventas.md, \"Cuerpo de una venta\"]. Atención: el manual no dice sobre qué base se calcula la seña cuando hay descuento. Si la base fuera el precio original, la seña sería $590.000. Esto queda sin resolver por el manual y debería confirmarse antes de cobrar.\n\n3. **¿Qué rol puede aprobar el descuento?** Gerencia. La tabla de roles indica que `encargado_local` aplica descuentos de hasta 15 % y que `gerencia` aprueba los mayores al 15 % [02-autenticacion-y-roles.md, \"Roles del sistema\"]. Como 18 % supera el 15 %, corresponde gerencia. El manual no tiene una regla específica para descuentos sobre presupuestos, así que esta conclusión se basa en la tabla general de roles.\n\nNota: como pediste confirmar el presupuesto con este descuento, la aprobación del descuento y la confirmación quedan pendientes de aprobación humana; no se ejecutó ninguna acción en el ERP."
+    },
+    {
+      "prueba": 3,
+      "job_id": "797425e12be24908b6b50a5639744eac",
+      "conversation_id": "6ed1bce4ec6c4950a0a50110bf7fcbd8",
+      "status": "DONE",
+      "latencia_s": 20.1,
+      "recorrido": "analista → sintetizador",
+      "fuentes": [
+        "03-api-ventas.md",
+        "02-autenticacion-y-roles.md"
+      ],
+      "accion": "",
+      "error": null,
+      "respuesta": "1. **Precio con 20 % de descuento:** $944.000 ($1.180.000 − $236.000). [03-api-ventas.md, \"Cuerpo de una venta\"]\n\n2. **Seña del 50 %:** depende de la base de cálculo, que el manual no define:\n   - Sobre el precio descontado: $472.000.\n   - Sobre el precio original: $590.000.\n   La diferencia entre ambas opciones es de $118.000. Hay que confirmar la base antes de cobrar. [03-api-ventas.md, \"Cuerpo de una venta\"]\n\n3. **Aprobación:** gerencia. El 20 % supera el 15 % que la tabla de roles reserva a `encargado_local`. La regla viene de la tabla general de roles; el manual no tiene una regla específica para descuentos sobre presupuestos. [02-autenticacion-y-roles.md, \"Roles del sistema\"]\n\nComparado con el 18 %, el precio baja de $967.600 a $944.000. La seña sobre el precio descontado pasa de $483.800 a $472.000.\n\nNo se ejecutó ninguna acción en el ERP. La aprobación del descuento y la confirmación del presupuesto quedan pendientes de aprobación humana."
+    },
+    {
+      "prueba": 4,
+      "job_id": "425e7c4076fd4fdaadc8fc799c44173d",
+      "conversation_id": "e6a8920389334cc4a60856e9637cb0dd",
+      "status": "DONE",
+      "latencia_s": 22.2,
+      "recorrido": "investigador → analista → sintetizador",
+      "fuentes": [
+        "05-caja-y-bancos.md",
+        "08-codigos-de-error.json"
+      ],
+      "accion": "",
+      "error": null,
+      "respuesta": "1. **¿Hace falta justificación?** Sí. El umbral es fijo en $5.000 (en más o en menos). Como la diferencia es de $7.300, el campo `justificacion` es obligatorio [05-caja-y-bancos.md, Cierre diario, punto 3].\n\n2. **¿Por cuánto supera el umbral?** Por $2.300 ($7.300 − $5.000) [05-caja-y-bancos.md, Cierre diario, punto 3].\n\n3. **Si no se justifica:** la API responde `422` con el código `CAJA-422-JUST`, así que hay que completar la justificación antes de cerrar [08-codigos-de-error.json, Catálogo de errores, Caja].\n\n**Datos que no quedaron resueltos:**\n- El manual no fija un plazo para presentar la justificación. La única regla temporal es que, una vez cerrado el día, no se pueden registrar movimientos con esa fecha (`409`, `CAJA-409-CERR`), y las correcciones se hacen con un ajuste en la fecha actual [05-caja-y-bancos.md, Cierre diario, punto 4].\n- El manual no fija porcentaje ni tolerancia relativa para la diferencia de caja, así que solo aplica el umbral fijo."
+    },
+    {
+      "prueba": 5,
+      "job_id": "7c18045b15e1493a9b64524acf6f3c63",
+      "conversation_id": "fe98495b265f47fdb3b03fa32c48d2ee",
+      "status": "DONE",
+      "latencia_s": 56.5,
+      "recorrido": "investigador → investigador → analista → sintetizador",
+      "fuentes": [
+        "02-autenticacion-y-roles.md",
+        "03-api-ventas.md",
+        "05-caja-y-bancos.md",
+        "08-codigos-de-error.json"
+      ],
+      "accion": "Acción 'aplicar_descuento' registrada en el ERP (registro #1), aprobada por gerencia.",
+      "error": null,
+      "respuesta": "1. **Vigencia del P-1042:** emitido el 28/10/2026, hoy (10/11/2026) van 13 días corridos. Como la validez es de 15 días corridos, sigue vigente, pero solo le quedan 2 días [03-api-ventas.md].\n\n2. **Descuento del 18 %:** supera el umbral de 15 % que puede aplicar un encargado de local, así que necesita aprobación de gerencia [02-autenticacion-y-roles.md]. El monto del descuento es $212.400 y el precio neto resultante es $967.600 ($1.180.000 − $212.400).\n\n3. **Seña:** las ventas de muebles a medida se crean con condición de seña y requieren cobrar el 50 % al confirmar [03-api-ventas.md]. Si el descuento se aplica antes de confirmar la venta, la seña es **$483.800** (50 % de $967.600). La seña de $590.000 correspondería solo sin descuento.\n\n4. **Registro en el ERP: no realizado.** No tengo herramientas de escritura, así que no pude aplicar el descuento ni registrar la seña. La acción queda pendiente de aprobación humana. Para completarla hacen falta:\n   - la aprobación de gerencia por el 18 %;\n   - un usuario con rol adecuado que cargue el descuento, o la indicación técnica del endpoint. El manual consultado no documenta cómo cargar un descuento sobre un presupuesto existente ni si modifica el monto o queda como campo aparte, y tampoco cómo se registra la aprobación de gerencia [03-api-ventas.md; 02-autenticacion-y-roles.md];\n   - al confirmar la venta, cobrar la seña de $483.800 (la registración de cobros en caja usa `POST /api/caja/movimientos` [05-caja-y-bancos.md]).\n\nConviene resolver la aprobación antes del vencimiento, que es en 2 días."
+    }
+  ]
+}
