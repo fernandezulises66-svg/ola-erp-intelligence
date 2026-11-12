@@ -3,106 +3,229 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ERP Intelligence System · Demo</title>
-  <meta name="description" content="Multi-agent AI system over an ERP knowledge base: hybrid RAG, supervisor-led agents, human approval and full tracing.">
+  <title>OLA ERP Intelligence · Multi-agent AI demo</title>
+  <meta name="description" content="Multi-agent AI for ERP operations, grounded in documentation and protected by human approval. Hybrid RAG, supervisor-led agents, persistent memory and full tracing.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#080b11">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234b63e6'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M16 10.5 10.5 20M16 10.5 21.5 20M11 21.5h10'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='16' cy='9' r='3'/%3E%3Ccircle cx='9.5' cy='21.5' r='3'/%3E%3Ccircle cx='22.5' cy='21.5' r='3'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <div>
-        <h1>ERP Intelligence System</h1>
-        <p class="subtitle">Hybrid RAG · Supervisor-led agents · Human-in-the-loop · Traced</p>
+  <a class="skip-link" href="#demo">Skip to the demo</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#6077f2"/>
+              <stop offset="1" stop-color="#3346b8"/>
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="8" fill="url(#brand-grad)"/>
+          <g fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round">
+            <path d="M16 10.5 10.5 20M16 10.5 21.5 20M11.5 21.5h9"/>
+          </g>
+          <g fill="#fff"><circle cx="16" cy="9" r="2.8"/><circle cx="9.5" cy="21.5" r="2.8"/><circle cx="22.5" cy="21.5" r="2.8"/></g>
+        </svg>
+        <div class="brand-text">
+          <h1>OLA ERP Intelligence</h1>
+          <p class="tagline">Multi-agent AI for ERP operations, grounded in documentation and protected by human approval.</p>
+        </div>
       </div>
-    </div>
-    <div class="topbar-right">
-      <span id="mode-pill" class="pill pill-muted" title="">Connecting…</span>
-      <a class="link-btn" href="https://github.com/fernandezulises66-svg/ola-erp-intelligence" target="_blank" rel="noopener">GitHub</a>
+      <div class="header-actions">
+        <span id="mode-pill" class="pill pill-muted" role="status">Connecting…</span>
+        <a class="btn btn-ghost" href="https://github.com/fernandezulises66-svg/ola-erp-intelligence" target="_blank" rel="noopener" aria-label="Source code on GitHub (opens in a new tab)">
+          <svg class="icon-gh" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
     </div>
   </header>
 
-  <main class="layout">
+  <section class="wrap capabilities" aria-labelledby="cap-heading">
+    <h2 id="cap-heading" class="sr-only">What the system demonstrates</h2>
+    <ul class="cap-list">
+      <li class="cap">
+        <svg class="icon cap-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.8 7.2 6.2 15.8M13.2 7.2l4.6 8.6M7.5 18h9"/></svg>
+        <div>
+          <h3 class="cap-title">Multi-Agent Orchestration</h3>
+          <p class="cap-desc">A supervisor delegates to a researcher and an analyst, then validates their work.</p>
+        </div>
+      </li>
+      <li class="cap">
+        <svg class="icon cap-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M13 3l6 6h-5a1 1 0 0 1-1-1V3z"/><circle cx="16" cy="16" r="3"/><path d="m18.2 18.2 2.3 2.3"/></svg>
+        <div>
+          <h3 class="cap-title">Hybrid RAG</h3>
+          <p class="cap-desc">BM25 plus Pinecone vector search over the ERP manual, with cited sources.</p>
+        </div>
+      </li>
+      <li class="cap">
+        <svg class="icon cap-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div>
+          <h3 class="cap-title">Human-in-the-Loop</h3>
+          <p class="cap-desc">Actions that change the ERP pause at a checkpoint until a person approves.</p>
+        </div>
+      </li>
+      <li class="cap">
+        <svg class="icon cap-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
+        <div>
+          <h3 class="cap-title">Persistent Memory</h3>
+          <p class="cap-desc">Conversations persist as LangGraph checkpoints in Redis and survive restarts.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <main id="demo" class="wrap layout" tabindex="-1">
     <!-- Conversación -->
     <section class="panel chat" aria-labelledby="chat-title">
       <div class="panel-head">
-        <h2 id="chat-title">Conversation</h2>
-        <button id="new-conv" class="ghost-btn" type="button">New conversation</button>
-      </div>
-      <p class="hint" id="lang-note">The system serves a fictional Argentine furniture company, so questions and answers are in Spanish.</p>
-
-      <div id="messages" class="messages" aria-live="polite">
-        <div class="empty" id="empty-state">
-          <p class="empty-title">Ask about the ERP manual</p>
-          <p>Pick an example below. The supervisor will delegate to a researcher (hybrid RAG over the manual) and an analyst (deterministic calculations), then validate before answering.</p>
+        <div class="panel-heading">
+          <h2 id="chat-title">Conversation</h2>
+          <p class="panel-sub" id="lang-note">The demo serves a fictional Argentine furniture company, so questions and answers are in Spanish.</p>
         </div>
+        <button id="new-conv" class="btn btn-ghost btn-sm" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>
+          New conversation
+        </button>
       </div>
 
-      <div id="examples" class="examples" aria-label="Example questions"></div>
+      <div id="messages" class="messages" role="log" aria-live="polite" aria-label="Conversation messages"></div>
 
-      <form id="ask-form" class="ask">
-        <label class="sr-only" for="question">Question</label>
-        <textarea id="question" rows="2" placeholder="Escribí una pregunta sobre el ERP…" maxlength="2000"></textarea>
-        <button id="send" class="primary-btn" type="submit">Send</button>
+      <section class="scenarios" aria-labelledby="scenarios-title">
+        <div class="scenarios-head">
+          <h3 id="scenarios-title">Loading scenarios…</h3>
+          <p id="scenarios-sub" class="scenarios-sub"></p>
+        </div>
+        <div id="examples" class="scenarios-grid"></div>
+      </section>
+
+      <form id="ask-form" class="ask" hidden>
+        <label class="sr-only" for="question">Question about the ERP (in Spanish)</label>
+        <div class="ask-field">
+          <textarea id="question" rows="2" placeholder="Escribí una pregunta sobre el ERP…" maxlength="2000" lang="es" aria-describedby="ask-hint"></textarea>
+          <button id="send" class="btn btn-primary" type="submit">
+            Send
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <p id="ask-hint" class="ask-hint">Enter to send · Shift + Enter for a new line</p>
       </form>
     </section>
 
     <!-- Lo que pasa adentro -->
     <section class="panel inside" aria-labelledby="inside-title">
       <div class="panel-head">
-        <h2 id="inside-title">Under the hood</h2>
-        <span id="job-pill" class="pill pill-muted">Idle</span>
+        <div class="panel-heading">
+          <h2 id="inside-title">Under the hood</h2>
+          <p class="panel-sub">The agent graph and execution steps of the current run.</p>
+        </div>
+        <span id="job-pill" class="pill pill-muted" role="status">Idle</span>
       </div>
 
       <figure class="graph-wrap">
-        <svg id="graph" viewBox="0 0 520 330" role="img" aria-label="Agent graph: supervisor delegates to researcher and analyst, then synthesizer, risk check and optional human approval">
+        <svg id="graph" viewBox="0 0 600 370" role="img" aria-labelledby="graph-title graph-desc">
+          <title id="graph-title">Agent graph</title>
+          <desc id="graph-desc">START leads to the Supervisor, which conditionally delegates to the Researcher (hybrid RAG) or the Analyst (calculation tools); both report back to the Supervisor. The Supervisor then routes to the Synthesizer, followed by the Risk check, which conditionally requires Human approval before the ERP action.</desc>
           <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0 0L10 5L0 10z" fill="#3a4559"/>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8.6" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M1.2 1.4 8.6 5l-7.4 3.6" fill="none" stroke="#46526a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+            <marker id="arrow-on" viewBox="0 0 10 10" refX="8.6" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M1.2 1.4 8.6 5l-7.4 3.6" fill="none" stroke="#9aacff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
             </marker>
           </defs>
-          <g class="edges" fill="none" stroke="#3a4559" stroke-width="1.25">
-            <path d="M260 66V96" marker-end="url(#arrow)"/>
-            <path d="M196 136L96 172" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
-            <path d="M150 174L250 138" marker-end="url(#arrow)"/>
-            <path d="M324 136L424 172" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
-            <path d="M370 174L270 138" marker-end="url(#arrow)"/>
-            <path d="M260 136V224" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
-            <path d="M260 256V284" marker-end="url(#arrow)"/>
-            <path d="M330 300H372" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
-            <path d="M440 284V264" marker-end="url(#arrow)"/>
+          <g class="edges">
+            <path class="edge" data-edge="start>supervisor" d="M300 38V66"/>
+            <path class="edge cond" data-edge="supervisor>investigador" d="M222 82H100Q90 82 90 92V148"/>
+            <path class="edge" data-edge="investigador>supervisor" d="M140 150V108Q140 98 150 98H220"/>
+            <path class="edge cond" data-edge="supervisor>analista" d="M378 82H500Q510 82 510 92V148"/>
+            <path class="edge" data-edge="analista>supervisor" d="M460 150V108Q460 98 450 98H380"/>
+            <path class="edge cond" data-edge="supervisor>sintetizador" d="M300 112V230"/>
+            <path class="edge" data-edge="sintetizador>evaluar_riesgo" d="M222 254H112Q102 254 102 264V312"/>
+            <path class="edge cond" data-edge="evaluar_riesgo>aprobacion_humana" d="M180 336H220"/>
+            <path class="edge" data-edge="aprobacion_humana>ejecutar_accion" d="M378 336H418"/>
           </g>
-          <g class="node" data-node="start"><rect x="220" y="34" width="80" height="32" rx="16"/><text x="260" y="54">START</text></g>
-          <g class="node" data-node="supervisor"><rect x="190" y="98" width="140" height="38" rx="8"/><text x="260" y="122">Supervisor</text></g>
-          <g class="node" data-node="investigador"><rect x="30" y="174" width="150" height="38" rx="8"/><text x="105" y="191">Researcher</text><text class="sub" x="105" y="205">hybrid RAG</text></g>
-          <g class="node" data-node="analista"><rect x="340" y="174" width="150" height="38" rx="8"/><text x="415" y="191">Analyst</text><text class="sub" x="415" y="205">calc tools</text></g>
-          <g class="node" data-node="sintetizador"><rect x="190" y="226" width="140" height="30" rx="8"/><text x="260" y="246">Synthesizer</text></g>
-          <g class="node" data-node="evaluar_riesgo"><rect x="190" y="286" width="140" height="30" rx="8"/><text x="260" y="306">Risk check</text></g>
-          <g class="node" data-node="aprobacion_humana"><rect x="374" y="286" width="132" height="30" rx="8"/><text x="440" y="306">Human approval</text></g>
-          <g class="node" data-node="ejecutar_accion"><rect x="374" y="230" width="132" height="32" rx="8"/><text x="440" y="251">ERP action</text></g>
+          <g class="node node-start" data-node="start"><rect x="256" y="10" width="88" height="28" rx="14"/><text class="title" x="300" y="28.5">START</text></g>
+          <g class="node" data-node="supervisor"><rect x="222" y="68" width="156" height="44" rx="10"/><text class="title" x="300" y="87">Supervisor</text><text class="sub" x="300" y="102.5">routes · validates</text></g>
+          <g class="node" data-node="investigador"><rect x="24" y="150" width="156" height="44" rx="10"/><text class="title" x="102" y="169">Researcher</text><text class="sub" x="102" y="184.5">hybrid RAG</text></g>
+          <g class="node" data-node="analista"><rect x="420" y="150" width="156" height="44" rx="10"/><text class="title" x="498" y="169">Analyst</text><text class="sub" x="498" y="184.5">calculation tools</text></g>
+          <g class="node" data-node="sintetizador"><rect x="222" y="232" width="156" height="44" rx="10"/><text class="title" x="300" y="251">Synthesizer</text><text class="sub" x="300" y="266.5">final answer</text></g>
+          <g class="node" data-node="evaluar_riesgo"><rect x="24" y="314" width="156" height="44" rx="10"/><text class="title" x="102" y="333">Risk check</text><text class="sub" x="102" y="348.5">criticality gate</text></g>
+          <g class="node" data-node="aprobacion_humana"><rect x="222" y="314" width="156" height="44" rx="10"/><text class="title" x="300" y="333">Human approval</text><text class="sub" x="300" y="348.5">pauses the graph</text></g>
+          <g class="node" data-node="ejecutar_accion"><rect x="420" y="314" width="156" height="44" rx="10"/><text class="title" x="498" y="333">ERP action</text><text class="sub" x="498" y="348.5">runs if approved</text></g>
         </svg>
-        <figcaption class="hint">Dashed arrows are conditional edges decided by the supervisor or the risk check.</figcaption>
+        <figcaption class="legend">
+          <span class="lg"><span class="lg-line" aria-hidden="true"></span>Fixed edge</span>
+          <span class="lg"><span class="lg-line lg-dash" aria-hidden="true"></span>Conditional (supervisor or risk check)</span>
+          <span class="lg"><span class="lg-node lg-active" aria-hidden="true"></span>Active</span>
+          <span class="lg"><span class="lg-node lg-visited" aria-hidden="true"></span>Visited</span>
+          <span class="lg"><span class="lg-node lg-waiting" aria-hidden="true"></span>Awaiting approval</span>
+          <span class="lg"><span class="lg-node lg-done" aria-hidden="true"></span>Completed</span>
+        </figcaption>
       </figure>
 
-      <div id="approval" class="approval" hidden>
-        <p class="approval-title">Human approval required</p>
-        <p id="approval-desc" class="approval-desc"></p>
-        <div class="approval-actions">
-          <button id="approve" class="primary-btn" type="button">Approve as manager</button>
-          <button id="reject" class="ghost-btn" type="button">Reject</button>
+      <section id="approval" class="approval" aria-labelledby="approval-title" tabindex="-1" hidden>
+        <div class="approval-head">
+          <span class="approval-icon" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3z"/><path d="M10 9.5v5M14 9.5v5"/></svg>
+          </span>
+          <div>
+            <h3 id="approval-title">Human approval required</h3>
+            <p class="approval-status">The graph is paused at a checkpoint. No ERP action has executed yet.</p>
+          </div>
         </div>
-      </div>
+        <dl class="approval-grid">
+          <div>
+            <dt>Proposed action</dt>
+            <dd><code id="approval-type" class="approval-type"></code><span id="approval-desc" class="approval-desc" lang="es"></span></dd>
+          </div>
+          <div>
+            <dt>Why approval is required</dt>
+            <dd id="approval-reason" lang="es"></dd>
+          </div>
+        </dl>
+        <div class="approval-actions">
+          <button id="approve" class="btn btn-primary" type="button">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            Approve as manager
+          </button>
+          <button id="reject" class="btn btn-ghost" type="button" aria-describedby="approval-note">Reject</button>
+        </div>
+        <p id="approval-note" class="approval-note" hidden>This recorded run was approved by a manager, so the replay can only follow that path. Run the repository locally to try a rejection.</p>
+      </section>
 
-      <h3 class="timeline-title">Execution steps</h3>
-      <ol id="timeline" class="timeline"><li class="timeline-empty">Steps stream here in real time (Server-Sent Events).</li></ol>
+      <div class="timeline-head">
+        <h3 id="timeline-title">Execution steps</h3>
+        <span id="step-count" class="step-count"></span>
+      </div>
+      <ol id="timeline" class="timeline" aria-labelledby="timeline-title" tabindex="0">
+        <li class="timeline-empty">Steps appear here as the run progresses.</li>
+      </ol>
     </section>
   </main>
 
-  <footer class="foot">
-    <p>Fictional company and data. Built with FastAPI, LangGraph, Redis, Pinecone, Anthropic Claude and Arize Phoenix. <span id="replay-note"></span></p>
+  <section class="wrap validation rule-top" aria-labelledby="validation-title">
+    <div class="validation-intro">
+      <h2 id="validation-title">Verified in the repository</h2>
+      <p>Checks that ship with the code. These are not production SLA metrics.</p>
+    </div>
+    <dl class="validation-list">
+      <div><dt>36</dt><dd>Automated tests</dd></div>
+      <div><dt>5</dt><dd>End-to-end scenarios</dd></div>
+      <div><dt>Persistent</dt><dd>Conversation checkpoints</dd></div>
+      <div><dt>Traced</dt><dd>Agent execution</dd></div>
+    </dl>
+  </section>
+
+  <footer class="wrap site-footer rule-top">
+    <p class="stack"><span class="stack-label">Built with</span> Python · FastAPI · LangGraph · Redis · Pinecone · Claude · Arize Phoenix</p>
+    <p class="disclosure">Fictional company and data. <span id="replay-note"></span></p>
   </footer>
 
   <script src="./app.js" type="module"></script>

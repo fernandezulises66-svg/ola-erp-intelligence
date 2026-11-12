@@ -182,5 +182,5 @@ def test_demo_web_servida_por_la_api():
         r = c.get("/", follow_redirects=False)
         assert r.status_code == 307 and r.headers["location"] == "/ui/"
         pagina = c.get("/ui/")
-        assert pagina.status_code == 200 and "ERP Intelligence System" in pagina.text
+        assert pagina.status_code == 200 and "OLA ERP Intelligence" in pagina.text
         assert c.get("/ui/app.js").status_code == 200
